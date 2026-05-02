@@ -27,7 +27,7 @@ export function Card({ className, noPadding = false, children, ...props }: CardP
 /* ------------------------------------------------------------------ */
 /* CardHeader                                                            */
 /* ------------------------------------------------------------------ */
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface CardHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'> {
   title: React.ReactNode;
   description?: React.ReactNode;
   action?: React.ReactNode;
