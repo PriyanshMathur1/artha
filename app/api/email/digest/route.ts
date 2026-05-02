@@ -40,7 +40,7 @@ export async function POST() {
     const to = process.env.EMAIL_FROM ?? '';
     const html = buildDigestHtml({ totalValue, totalPnL, totalPnLPct, topGainers, topLosers, recentAlerts: alerts });
 
-    await sendEmail({ to, subject: `StockMind Portfolio Digest — ${new Date().toLocaleDateString('en-IN')}`, html });
+    await sendEmail({ to, subject: `Artha Terminal Portfolio Digest — ${new Date().toLocaleDateString('en-IN')}`, html });
 
     return NextResponse.json({ ok: true, to, alertCount: alerts.length, stockCount: items.length });
   } catch (err) {

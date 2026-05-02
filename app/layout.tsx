@@ -73,6 +73,7 @@ function Footer() {
           <span>Prices: Angel One + Yahoo Finance</span>
           <span>Fundamentals: Yahoo Finance</span>
           <span>MF NAV: MFAPI.in</span>
+          <span>Created by Priyansh Mathur</span>
           <span>© {new Date().getFullYear()} Artha</span>
         </div>
       </div>

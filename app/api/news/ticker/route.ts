@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; StockMindBot/1.0)' },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ArthaBot/1.0)' },
       next: { revalidate: 900 }, // 15 min cache
     });
 

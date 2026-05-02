@@ -1,6 +1,6 @@
 {
-  "name": "StockMind Terminal",
-  "short_name": "StockMind",
+  "name": "Artha Terminal",
+  "short_name": "Artha",
   "description": "AI-powered NSE stock screener and portfolio manager for Indian equities",
   "start_url": "/",
   "display": "standalone",

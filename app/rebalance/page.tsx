@@ -1,6 +1,6 @@
 import { RebalanceReport } from '@/components/Portfolio/RebalanceReport';
 
-export const metadata = { title: 'Portfolio Rebalancer — StockMind Terminal' };
+export const metadata = { title: 'Portfolio Rebalancer — Artha Terminal' };
 
 export default function RebalancePage() {
   return (

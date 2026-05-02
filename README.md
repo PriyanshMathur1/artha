@@ -10,10 +10,11 @@
 
 <br /><br />
 
-# StockMind Terminal
+# Artha Terminal
 
 ### AI-powered investment terminal for the Indian retail investor.
 ### Screen 500+ NSE stocks · 6-agent deep analysis · portfolio sync from your broker.
+### Created by Priyansh Mathur
 
 <br />
 
@@ -37,7 +38,7 @@
 
 ## What is this?
 
-StockMind Terminal is a full-stack web app that brings institutional-grade stock research to retail investors. It combines live NSE/BSE market data with a 6-agent AI engine that scores every stock across fundamentals, technicals, moat, growth, sentiment, and risk — then spits out a clear verdict: **Strong Buy → Avoid**.
+Artha Terminal is a full-stack web app that brings institutional-grade stock research to retail investors. It combines live NSE/BSE market data with a 6-agent AI engine that scores every stock across fundamentals, technicals, moat, growth, sentiment, and risk — then spits out a clear verdict: **Strong Buy → Avoid**.
 
 No spreadsheets. No juggling 10 browser tabs. Just open the terminal and decide.
 
@@ -90,8 +91,8 @@ No spreadsheets. No juggling 10 browser tabs. Just open the terminal and decide.
 
 ```bash
 # 1. Clone
-git clone https://github.com/Rishi298/StockMind.git
-cd StockMind
+git clone https://github.com/PriyanshMathur1/artha.git
+cd artha
 
 # 2. Install dependencies
 npm install

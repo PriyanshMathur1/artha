@@ -33,8 +33,17 @@ export default function MutualFundsPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/portfolio/overview');
-      const data = await res.json() as { mfs: MFItem[] };
+      const text = await res.text();
+      let data: { mfs: MFItem[]; error?: string };
+      try {
+        data = JSON.parse(text) as { mfs: MFItem[]; error?: string };
+      } catch {
+        throw new Error('Portfolio API returned invalid response');
+      }
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load mutual funds');
       setMfs(data.mfs ?? []);
+    } catch {
+      setMfs([]);
     } finally {
       setLoading(false);
     }

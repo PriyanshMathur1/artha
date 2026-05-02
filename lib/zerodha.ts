@@ -88,13 +88,13 @@ export function parseZerodhaCSV(csvText: string): ZerodhaCSVRow[] {
   const lines = csvText.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
 
-  // Zerodha Holdings CSV has metadata rows at the top before the actual headers.
-  // Scan every line to find the one that contains "symbol" in any column — that is
+  // Zerodha Holdings CSV may have metadata rows before the actual headers.
+  // Scan every line to find one that contains a symbol column variant — that is
   // the real header row. The preceding rows are summary/metadata.
   let headerLineIdx = -1;
   for (let i = 0; i < lines.length; i++) {
     const cols = parseCSVLine(lines[i]).map((c) => c.replace(/"/g, '').toLowerCase().trim());
-    if (cols.some((c) => c === 'symbol')) {
+    if (cols.some((c) => c === 'symbol' || c === 'instrument' || c === 'tradingsymbol')) {
       headerLineIdx = i;
       break;
     }
@@ -102,7 +102,7 @@ export function parseZerodhaCSV(csvText: string): ZerodhaCSVRow[] {
 
   if (headerLineIdx === -1) {
     throw new Error(
-      'Could not find the "Symbol" header row in this CSV.\n' +
+      'Could not find the symbol/instrument header row in this CSV.\n' +
       'Please upload the Holdings CSV downloaded from Zerodha Console → Holdings → Download (↓).'
     );
   }
@@ -115,10 +115,10 @@ export function parseZerodhaCSV(csvText: string): ZerodhaCSVRow[] {
   //  [empty], Symbol, ISIN, Sector, Quantity Available, Quantity Discrepant,
   //  Quantity Long Term, Quantity Pledged (Margin), Quantity Pledged (Loan),
   //  Average Price, Previous Closing Price, Unrealized P&L, Unrealized P&L Pct.
-  const symbolIdx    = findColIdx(headers, 'symbol');
+  const symbolIdx    = findColIdx(headers, 'symbol', 'instrument', 'tradingsymbol');
   const isinIdx      = findColIdx(headers, 'isin');
   const sectorIdx    = findColIdx(headers, 'sector');
-  const qtyIdx       = findColIdx(headers, 'quantity available', 'quantity');
+  const qtyIdx       = findColIdx(headers, 'quantity available', 'quantity', 'qty.', 'qty');
   const avgIdx       = findColIdx(headers, 'average price', 'avg. cost', 'average cost', 'avg cost');
   const prevCloseIdx = findColIdx(headers, 'previous closing price', 'previous closing', 'ltp');
   const pnlIdx       = findColIdx(headers, 'unrealized p&l', 'unrealised p&l');
@@ -136,7 +136,7 @@ export function parseZerodhaCSV(csvText: string): ZerodhaCSVRow[] {
     .filter((l) => l.trim())
     .map((line) => {
       const cols = parseCSVLine(line);
-      const symbol      = cols[symbolIdx]?.replace(/"/g, '').trim() ?? '';
+      const symbol      = (cols[symbolIdx]?.replace(/"/g, '').trim() ?? '').toUpperCase();
       const qty         = parseFloat(cols[qtyIdx] ?? '0') || 0;
       const avgPrice    = parseFloat(cols[avgIdx] ?? '0') || 0;
       const sector      = sectorIdx >= 0 ? (cols[sectorIdx]?.replace(/"/g, '').trim() ?? '') : '';

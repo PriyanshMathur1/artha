@@ -21,7 +21,7 @@ export async function sendEmail(params: {
   }
   const transporter = getTransporter();
   await transporter.sendMail({
-    from: `StockMind Terminal <${EMAIL_FROM}>`,
+    from: `Artha Terminal <${EMAIL_FROM}>`,
     to: params.to,
     subject: params.subject,
     html: params.html,
@@ -62,7 +62,7 @@ export function buildDigestHtml(params: {
 <body style="background:#1c1917;font-family:Arial,sans-serif;color:#d6d3d1;margin:0;padding:20px;">
   <div style="max-width:600px;margin:0 auto;background:#292524;border-radius:12px;overflow:hidden;border:1px solid #44403c;">
     <div style="background:#f59e0b;padding:16px 24px;">
-      <h1 style="color:#1c1917;margin:0;font-size:18px;">📊 StockMind Daily Portfolio Digest</h1>
+      <h1 style="color:#1c1917;margin:0;font-size:18px;">📊 Artha Terminal Daily Portfolio Digest</h1>
       <p style="color:#44403c;margin:4px 0 0;font-size:12px;">${new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
     </div>
     <div style="padding:24px;">
@@ -96,7 +96,7 @@ export function buildDigestHtml(params: {
 
       <div style="text-align:center;border-top:1px solid #44403c;padding-top:16px;margin-top:4px;">
         <p style="color:#57534e;font-size:11px;margin:0;">
-          StockMind Terminal · Educational use only · Not investment advice<br>
+          Artha Terminal · Educational use only · Not investment advice<br>
           Data from Yahoo Finance & MFAPI.in
         </p>
       </div>

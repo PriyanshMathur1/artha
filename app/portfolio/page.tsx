@@ -6,6 +6,7 @@ import { Plus, RefreshCw, BarChart2, TrendingUp, Bell } from 'lucide-react';
 import { PortfolioSummary, EmptyPortfolio } from '@/components/Portfolio/PortfolioSummary';
 import { ZerodhaImport } from '@/components/Portfolio/ZerodhaImport';
 import { AngelOnePanel } from '@/components/AngelOnePanel';
+import { PortfolioImport } from '@/components/Portfolio/PortfolioImport';
 
 interface StockRow {
   symbol: string;
@@ -311,6 +312,7 @@ export default function PortfolioDashboard() {
               </div>
 
               <AngelOnePanel onSynced={() => load(true)} />
+              <PortfolioImport onImported={() => load(true)} />
               <ZerodhaImport onImported={() => load(true)} />
             </div>
           </div>

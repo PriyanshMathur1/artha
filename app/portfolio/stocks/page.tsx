@@ -5,6 +5,7 @@ import { Plus, RefreshCw, AlertCircle } from 'lucide-react';
 import { HoldingsTable } from '@/components/Portfolio/HoldingsTable';
 import { AddHoldingModal } from '@/components/Portfolio/AddHoldingModal';
 import { ZerodhaImport } from '@/components/Portfolio/ZerodhaImport';
+import { PortfolioImport } from '@/components/Portfolio/PortfolioImport';
 
 interface StockItem {
   id: number;
@@ -26,6 +27,7 @@ interface StockItem {
 
 interface OverviewResponse {
   stocks: StockItem[];
+  error?: string;
   summary: {
     totalStockValue: number;
     totalInvested: number;
@@ -46,15 +48,26 @@ export default function StocksPage() {
     setLoading(true);
     try {
       const res = await fetch('/api/portfolio/overview');
-      const data = await res.json() as OverviewResponse;
+      const text = await res.text();
+      let data: OverviewResponse;
+      try {
+        data = JSON.parse(text) as OverviewResponse;
+      } catch {
+        throw new Error('Portfolio API returned invalid response');
+      }
+      if (!res.ok) throw new Error(data.error ?? 'Failed to load portfolio');
       setStocks(data.stocks ?? []);
       setSummary({
-        totalStockValue: data.summary.totalStockValue,
-        totalInvested: data.summary.totalInvested,
-        totalPnL: data.summary.totalPnL,
-        totalPnLPct: data.summary.totalPnLPct,
+        totalStockValue: data.summary?.totalStockValue ?? 0,
+        totalInvested: data.summary?.totalInvested ?? 0,
+        totalPnL: data.summary?.totalPnL ?? 0,
+        totalPnLPct: data.summary?.totalPnLPct ?? 0,
       });
       setFailedCount((data.stocks ?? []).filter((s) => s.quoteFailed).length);
+    } catch {
+      setStocks([]);
+      setSummary({ totalStockValue: 0, totalInvested: 0, totalPnL: 0, totalPnLPct: 0 });
+      setFailedCount(0);
     } finally {
       setLoading(false);
     }
@@ -169,6 +182,10 @@ export default function StocksPage() {
       )}
 
       <div className="mt-6">
+        <PortfolioImport onImported={load} />
+      </div>
+
+      <div className="mt-4">
         <ZerodhaImport onImported={load} />
       </div>
 
