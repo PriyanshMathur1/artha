@@ -7,9 +7,10 @@ import type { CompositeResult } from '@/lib/agents/shared/types';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 30;
 
+// Next.js 15: params is a Promise
 export async function POST(
   req: NextRequest,
-  { params }: { params: { code: string } },
+  { params }: { params: Promise<{ code: string }> },
 ) {
   let user;
   try {
@@ -18,9 +19,8 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const code = params.code;
+  const { code } = await params;
 
-  // Optional: caller can pass overrides/categoryStats as request body
   let overrides: Parameters<typeof runMFScan>[1] | undefined;
   let categoryStats: Parameters<typeof runMFScan>[2] | undefined;
   try {
@@ -52,7 +52,7 @@ async function persistScanRun(userId: string, symbol: string, result: CompositeR
         assetType: 'MF',
         symbol,
         composite: result.composite,
-        verdict: result.verdict as never,  // Prisma enum — matches after `prisma generate`
+        verdict: result.verdict as never,
         rationale: result.rationale,
         agentScores: {
           create: result.agentResults.map((a) => ({

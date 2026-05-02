@@ -4,14 +4,15 @@ import { getScheme, getLatestNav } from '@/lib/data/mfapi';
 
 export const dynamic = 'force-dynamic';
 
+// Next.js 15: params is a Promise
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { code: string } },
+  { params }: { params: Promise<{ code: string }> },
 ) {
   const { userId } = await auth();
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const code = params.code;
+  const { code } = await params;
   const [scheme, latestNav] = await Promise.all([
     getScheme(code),
     getLatestNav(code),
@@ -29,7 +30,6 @@ export async function GET(
     schemeType: scheme.schemeType,
     nav: latestNav?.nav ?? null,
     navDate: latestNav?.date ?? null,
-    // Trim nav history from the response (too large for a metadata endpoint)
     navDataPoints: scheme.nav.length,
   });
 }
