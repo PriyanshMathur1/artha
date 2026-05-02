@@ -60,7 +60,7 @@ async function persistScanRun(userId: string, symbol: string, result: CompositeR
             score: a.score,
             weight: 1 / result.agentResults.length,
             rationale: a.rationale,
-            signals: a.signals ?? {},
+            signals: JSON.parse(JSON.stringify(a.signals ?? {})),
           })),
         },
       },
