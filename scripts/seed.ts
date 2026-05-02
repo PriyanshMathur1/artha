@@ -10,7 +10,6 @@
  * Idempotent — uses upsert so safe to run multiple times.
  */
 
-// @ts-expect-error — run `npm run db:generate` first to produce Prisma client types
 import { PrismaClient } from '@prisma/client';
 import { NIFTY_50_SEED } from '../lib/data/universe';
 
