@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { KiteConnect } = require('kiteconnect') as { KiteConnect: new (p: { api_key: string }) => KiteInstance };
 
 interface KiteInstance {

@@ -240,7 +240,7 @@ export function RebalanceReport({ initial }: { initial?: Report }) {
       {!report && !loading && (
         <div className="text-center py-16 text-stone-500">
           <RotateCcw className="h-10 w-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Click "Run Analysis" to get rebalancing recommendations.</p>
+          <p className="text-sm">Click &ldquo;Run Analysis&rdquo; to get rebalancing recommendations.</p>
           <p className="text-xs mt-1 text-stone-600">Uses live Angel One prices for accurate position sizing.</p>
         </div>
       )}
