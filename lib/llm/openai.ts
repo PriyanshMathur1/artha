@@ -19,9 +19,24 @@ function requiredEnv(name: string): string {
   return v;
 }
 
+/** Resolves the API key and base URL.
+ *  Priority: GROQ_API_KEY → OPENAI_API_KEY (with optional OPENAI_BASE_URL override). */
+function resolveProvider(): { apiKey: string; baseUrl: string } {
+  const groqKey = process.env.GROQ_API_KEY;
+  if (groqKey) {
+    return {
+      apiKey: groqKey,
+      baseUrl: (process.env.GROQ_BASE_URL ?? 'https://api.groq.com/openai/v1').replace(/\/$/, ''),
+    };
+  }
+  return {
+    apiKey: requiredEnv('OPENAI_API_KEY'),
+    baseUrl: (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, ''),
+  };
+}
+
 export async function openAIChat(opts: OpenAIChatOptions): Promise<OpenAIChatResult> {
-  const apiKey = requiredEnv('OPENAI_API_KEY');
-  const baseUrl = (process.env.OPENAI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/$/, '');
+  const { apiKey, baseUrl } = resolveProvider();
 
   const controller = new AbortController();
   const timeoutMs = opts.timeoutMs ?? 15000;
@@ -62,4 +77,3 @@ export async function openAIChat(opts: OpenAIChatOptions): Promise<OpenAIChatRes
     clearTimeout(t);
   }
 }
-

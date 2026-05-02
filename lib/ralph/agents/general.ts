@@ -3,8 +3,8 @@
  *
  * The only path that calls a paid LLM. Used when the router can't pin the
  * user prompt to a stock/MF/portfolio/compare intent — small talk, vague
- * questions, follow-up clarifications. Fails open: if `OPENAI_API_KEY` is
- * missing, the orchestrator catches the throw and emits a polite stub.
+ * questions, follow-up clarifications. Fails open: if no API key is
+ * configured, the orchestrator catches the throw and emits a polite stub.
  */
 
 import { openAIChat } from '@/lib/llm/openai';
@@ -29,7 +29,7 @@ function compactTurns(turns: ChatTurn[], maxChars = 4000): string {
  * raw token usage so the orchestrator can include it in `meta.tokenUsage`.
  */
 export async function runGeneralAnswerAgent(turns: ChatTurn[]): Promise<{ finding: AgentFinding; usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
-  const model = process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
+  const model = process.env.LLM_MODEL ?? process.env.OPENAI_MODEL ?? 'llama-3.3-70b-versatile';
   const transcript = compactTurns(turns);
 
   const system = [
