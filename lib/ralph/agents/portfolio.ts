@@ -1,3 +1,16 @@
+/**
+ * Portfolio specialist for Ralph.
+ *
+ * Pulls the user's holdings (stocks + MFs + watchlist) from Postgres, fetches
+ * live prices best-effort (Angel One for stocks, MFAPI for MFs), and produces
+ * one rich finding with: total value, P&L, sector concentration, top winners
+ * and losers, and concentration warnings.
+ *
+ * Best-effort means: any data source can fail (Angel One token expired,
+ * MFAPI hiccup) and the agent still returns a useful answer using cost basis
+ * as the fallback price.
+ */
+
 import { prisma } from '@/lib/db';
 import { getQuote } from '@/lib/angelone';
 import { getCurrentNav } from '@/lib/mfapi';
@@ -92,6 +105,10 @@ async function enrichMFs(holdings: Array<{ schemeCode: string; schemeName: strin
   return enriched;
 }
 
+/**
+ * Score the signed-in user's whole portfolio in one finding.
+ * Returns an empty-state finding (with import suggestions) if no holdings exist.
+ */
 export async function runPortfolioAgent(userId: string): Promise<AgentFinding> {
   const [stockRows, mfRows, watchlistCount] = await Promise.all([
     prisma.stockHolding.findMany({ where: { userId }, take: 100 }),

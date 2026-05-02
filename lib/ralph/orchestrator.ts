@@ -1,3 +1,19 @@
+/**
+ * Multi-agent orchestrator for the Ralph chat.
+ *
+ * Single entry point: `ralphRespond({ turns, userId })`. The orchestrator
+ *   1. Routes the latest user turn to an intent.
+ *   2. Dispatches the matching specialist agent(s) — in parallel where
+ *      multiple sub-agents apply (the stock path runs all 6 agents in
+ *      parallel; the compare path runs both sides in parallel).
+ *   3. Synthesises a single response object the UI can render directly.
+ *
+ * Failure handling: every external-data agent is wrapped in try/catch so a
+ * dead Angel One token / dead MFAPI / dead OpenAI key never 500s the chat.
+ * The user gets a polite degraded answer and the route tells them what to
+ * try next.
+ */
+
 import type { AgentFinding, RalphRequest, RalphResponse } from './types';
 import { routeRalph } from './router';
 import { runStockAgents } from './agents/stock';
@@ -14,6 +30,14 @@ function asStringArray(x: unknown): string[] {
   return Array.isArray(x) ? x.filter((s): s is string => typeof s === 'string') : [];
 }
 
+/**
+ * Process a chat request end-to-end.
+ *
+ * @param req `turns` is the full conversation; only the latest user message
+ *            is routed. `userId` is required for the portfolio intent and
+ *            optional everywhere else.
+ * @returns A `RalphResponse` shape the chat UI renders directly.
+ */
 export async function ralphRespond(req: RalphRequest): Promise<RalphResponse> {
   const started = Date.now();
   const lastUser = [...req.turns].reverse().find((t) => t.role === 'user')?.content ?? '';

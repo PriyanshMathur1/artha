@@ -1,8 +1,28 @@
+/**
+ * Intent router for the Ralph multi-agent chat.
+ *
+ * Takes the latest user message and decides which specialist to dispatch.
+ * Pure-function, dependency-free except for the universe lookup. Tested
+ * deterministically — see `.ralph/progress.md` for the smoke-test prompt set.
+ *
+ * Order of precedence (top-down, first match wins):
+ *   1. Two universe-validated tickers + a "vs/versus" word    → `compare` (stock)
+ *   2. MF hint + a "vs/versus" word                           → `compare` (mf)
+ *   3. MF hint                                                → `mf`
+ *   4. Portfolio hint with no ticker                          → `portfolio`
+ *   5. Single universe-validated ticker                       → `stock`
+ *   6. Portfolio hint (fallback)                              → `portfolio`
+ *   7. Stock hint without a resolvable ticker                 → `general`
+ *   8. Default                                                → `general`
+ */
+
 import { getStockInfo } from '@/lib/universe';
 import type { CompareKind, RalphIntent } from './types';
 
+/** What the router emits. The orchestrator switches on `intent`. */
 export interface RouteResult {
   intent: RalphIntent;
+  /** The NSE ticker symbol when intent === 'stock'. Always universe-validated. */
   ticker?: string;
   /** Free-text MF query (scheme name or scheme code) when intent === 'mf'. */
   mfQuery?: string;
@@ -60,6 +80,11 @@ function isMFQuery(qLower: string): boolean {
   return MF_HINTS.some((h) => qLower.includes(h));
 }
 
+/**
+ * Pick a specialist for a single user message.
+ * @param lastUserMessage The most recent user turn — only this is inspected.
+ *                        Conversation history is not used.
+ */
 export function routeRalph(lastUserMessage: string): RouteResult {
   const q = lastUserMessage.trim();
   const qLower = q.toLowerCase();

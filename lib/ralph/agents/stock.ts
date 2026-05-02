@@ -1,3 +1,17 @@
+/**
+ * Stock specialist for Ralph.
+ *
+ * Wraps the existing 6-agent stock engine under `lib/agents/*` and returns
+ * `AgentFinding[]` shapes that the chat UI can render. The 6 agents run
+ * concurrently — three of them (technical, sentiment, risk) need the live
+ * quote/history, so the network calls (`getQuote`, `getSummary`, `getHistory`)
+ * are issued first.
+ *
+ * The composite weighting (30/25/20/10/10/5) matches the public Deep Scan
+ * page so verdicts are consistent across surfaces. Don't change weights here
+ * without updating `app/stock/[ticker]/page.tsx`.
+ */
+
 import { getQuote, getSummary, getHistory } from '@/lib/angelone';
 import { fundamentalAgent } from '@/lib/agents/fundamental';
 import { technicalAgent } from '@/lib/agents/technical';
@@ -8,6 +22,10 @@ import { riskAgent } from '@/lib/agents/risk';
 
 import type { AgentFinding } from '../types';
 
+/**
+ * Run all 6 stock agents on a ticker and return their findings + a
+ * composite verdict. Throws if Angel One / Yahoo can't resolve the ticker.
+ */
 export async function runStockAgents(ticker: string): Promise<{ findings: AgentFinding[]; composite: { score: number; verdict: string } }> {
   const [quote, summary, history] = await Promise.all([getQuote(ticker), getSummary(ticker), getHistory(ticker, '1y')]);
 

@@ -36,6 +36,17 @@
 
 ---
 
+## New here?
+
+- 🗺  **[ARCHITECTURE.md](./ARCHITECTURE.md)** — plain-English tour of how the
+  app is wired (diagrams, data flow, what fails when).
+- 🛠  **[DEVELOPER_GUIDE.md](./DEVELOPER_GUIDE.md)** — onboarding for engineers
+  (where to add features, conventions, common tasks, tech-debt map).
+- 🤖 **[RALPH_TASK.md](./RALPH_TASK.md)** + **`.ralph/`** — the autonomous-iteration
+  loop used to build the multi-agent chat at `/chat`.
+
+---
+
 ## What is this?
 
 Artha Terminal is a full-stack web app that brings institutional-grade stock research to retail investors. It combines live NSE/BSE market data with a 6-agent AI engine that scores every stock across fundamentals, technicals, moat, growth, sentiment, and risk — then spits out a clear verdict: **Strong Buy → Avoid**.

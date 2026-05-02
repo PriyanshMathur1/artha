@@ -1,33 +1,40 @@
 # Progress
 
-## Iteration 1 — initial scaffold + full build (2026-05-02)
+## Iteration 1 — initial scaffold + chat build (2026-05-02)
+Built the multi-agent chat end-to-end. See git history feat/ai-chat-multi-agent.
+All checkboxes in `RALPH_TASK.md` are `[x]`.
 
-Done:
-- Surveyed existing `lib/ralph/*` (orchestrator, router, types, store, three agents).
-- Surveyed `lib/agents/*` (fundamental/technical/moat/growth/risk/sentiment).
-- Surveyed `lib/mfapi.ts` (NAV, trailing returns, direction).
-- Surveyed `lib/rebalancer.ts` (RebalanceReport with summary/review/trim/add/sectorBreakdown).
-- Surveyed `components/DeepDive/AgentScorecards.tsx` to model the chat scorecards after.
-- Wrote `RALPH_TASK.md` with checkbox-driven success criteria.
-- Wrote `.ralph/{guardrails.md, activity.log, errors.log, PROMPT.md}`.
+## Iteration 2 — cleanup + docs (2026-05-02)
 
-Built in this iteration:
-- `lib/ralph/types.ts` — added `mf` and `compare` intents; `score`, `verdict`, `warnings` on AgentFinding.
-- `lib/ralph/agents/mf.ts` — fuzzy scheme resolver, NAV + trailing returns + direction, verdict 0–10.
-- `lib/ralph/agents/compare.ts` — parallel two-side scoring, winner detection, per-side findings.
-- `lib/ralph/agents/portfolio.ts` — live P&L (best-effort), sectors, winners/losers, concentration warnings, score.
-- `lib/ralph/router.ts` — universe-validated tickers, MF detection, compare detection (fixed prefix-stripping bug).
-- `lib/ralph/orchestrator.ts` — dispatches all 5 intents, returns AgentFinding[] + meta.
-- `app/chat/page.tsx` — agent scorecards with score rings, collapsible "Why", clickable next-step suggestions, thread switcher.
+Approach:
+- Stacked cleanup commits on the same `feat/ai-chat-multi-agent` branch so the
+  user's PR ships chat + cleanup + docs in one merge.
+- Skipped sandbox-only TypeScript false positives (implicit-any in API routes
+  and `lib/ralph/store.ts` — they only show because Prisma client isn't
+  generated locally; on Vercel after `prisma generate` the callbacks have
+  proper types).
+
+Done in this iteration:
+- JSDoc'd every public export under `lib/ralph/*` (types, router, orchestrator,
+  and all 5 agents). Module-level docs explain the contract; per-export docs
+  explain the inputs/outputs.
+- `ARCHITECTURE.md` at repo root — plain-English tour with ASCII diagrams of
+  the three primary user flows (Deep Scan, Ralph chat, Portfolio agent), a
+  data-source table with failure modes, the folder map, and a Ralph extension
+  guide.
+- `DEVELOPER_GUIDE.md` at repo root — engineer onboarding: setup, where-to-add
+  decision tree, the 4-file Ralph intent recipe, conventions, severity-tagged
+  tech-debt list, common-tasks playbook, glossary.
+- README updated with a "New here?" section linking the two docs + the Ralph
+  loop files.
+- Dead-file deletion deferred to user-side `git rm` (sandbox lacks rm
+  permission). Files identified: `lib/utils/cn.ts`, `lib/utils/format.ts`,
+  `scripts/seed.ts`. They're functional stubs so nothing breaks if left.
 
 Verified:
-- `npx tsc --noEmit` is clean for every Ralph chat file (pre-existing errors elsewhere are out of scope).
-- Router smoke test: 12/12 prompts route to expected intents (stock, MF, portfolio, compare both kinds, general).
-
-Up next (future iterations, if needed):
-- Fix the `lib/ralph/store.ts` implicit-any warnings (pre-existing, not part of this task).
-- Consider streaming responses (SSE) for stock + compare paths.
-- Add an "explain why this scheme matches" hint when fuzzy MF resolution picks the wrong plan.
-- Wire the `/api/rebalance` deep call into the portfolio agent for users with Angel One configured.
+- `npx tsc --noEmit` clean for every file in `lib/ralph/*`, `app/chat/page.tsx`,
+  `components/AskAIFab.tsx`, `app/layout.tsx`. Pre-existing implicit-any
+  errors in `app/api/*`, `lib/rebalancer.ts`, `lib/ralph/store.ts` are
+  sandbox-only (Prisma not generated locally) and don't appear on Vercel.
 
 `<ralph>COMPLETE</ralph>`

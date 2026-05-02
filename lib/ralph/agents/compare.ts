@@ -1,3 +1,12 @@
+/**
+ * Comparison specialist for Ralph.
+ *
+ * Runs two specialists in parallel (stock-vs-stock or MF-vs-MF) and produces
+ * a single comparison finding plus the per-side findings the UI renders as
+ * sibling cards. Winner is decided by absolute score gap, with a "tie" band
+ * of ±0.3 points so visually-identical scores don't flip on noise.
+ */
+
 import { runStockAgents } from './stock';
 import { runMFAgent } from './mf';
 import type { AgentFinding, CompareKind } from '../types';
@@ -71,6 +80,12 @@ async function scoreMFSide(query: string): Promise<SideScore> {
   };
 }
 
+/**
+ * Compare two stocks or two mutual funds head-to-head.
+ * @param left  First side — ticker if `kind === 'stock'`, scheme code/name if `kind === 'mf'`.
+ * @param right Second side, same convention.
+ * @param kind  Which specialist to dispatch on each side.
+ */
 export async function runCompareAgent(
   left: string,
   right: string,

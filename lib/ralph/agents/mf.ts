@@ -1,3 +1,14 @@
+/**
+ * Mutual fund specialist for Ralph.
+ *
+ * Resolves a fuzzy scheme name or numeric scheme code to a single fund,
+ * pulls latest NAV + trailing returns + 3-month direction from MFAPI, and
+ * scores it on a 0–10 scale anchored to 1Y return.
+ *
+ * Resolver bias: prefers Direct + Growth plans, demotes IDCW/dividend variants
+ * (which MFAPI exposes as separate scheme codes for the same fund family).
+ */
+
 import {
   searchMFSchemes,
   getMFDetail,
@@ -69,6 +80,12 @@ function fmtPct(n: number | null | undefined): string {
   return `${sign}${n.toFixed(1)}%`;
 }
 
+/**
+ * Resolve and score a single mutual fund.
+ * @param query Either an AMFI scheme code (4–7 digits) or a fuzzy scheme name
+ *              like "Parag Parikh Flexi Cap" or "PPFAS Flexi Cap Direct Growth".
+ * @returns A finding the orchestrator turns into the chat answer + card.
+ */
 export async function runMFAgent(query: string): Promise<MFAgentResult> {
   const scheme = await resolveScheme(query);
   if (!scheme) {

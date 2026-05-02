@@ -1,92 +1,57 @@
-# Push this PR to GitHub
+# Push the cleanup + docs commit
 
-I've staged all the changes locally but I can't push from this sandbox — it
-needs your auth. Run the block below in your terminal from the repo root
-(`/Users/priyansh/Desktop/artha`).
+The cleanup + documentation work is staged on top of the existing
+`feat/ai-chat-multi-agent` branch. One push wraps everything into the same
+PR — chat + FAB + cleanup + docs land together.
 
-## Option A — using the `gh` CLI (one command opens the PR for you)
-
-```bash
-cd /Users/priyansh/Desktop/artha
-
-# 1. Create a clean branch
-git checkout -b feat/ai-chat-multi-agent
-
-# 2. Stage everything this work touched
-git add \
-  RALPH_TASK.md \
-  PR_DESCRIPTION.md \
-  PUSH_THE_PR.md \
-  .ralph/ \
-  components/AskAIFab.tsx \
-  app/layout.tsx \
-  app/chat/page.tsx \
-  lib/ralph/types.ts \
-  lib/ralph/router.ts \
-  lib/ralph/orchestrator.ts \
-  lib/ralph/agents/mf.ts \
-  lib/ralph/agents/compare.ts \
-  lib/ralph/agents/portfolio.ts
-
-# 3. Commit
-git commit -m "feat(chat): Ralph multi-agent chat + Ask AI floating button
-
-- New MF and Compare agents in lib/ralph/agents/
-- Beefed-up portfolio agent (P&L, sectors, winners/losers, concentration)
-- Universe-validated router with MF + compare intent detection
-- Orchestrator dispatches stock / mf / portfolio / compare / general
-- Chat UI renders score rings, agent cards, why bullets, suggestion chips
-- Floating Ask AI FAB on every page (hidden on /chat and auth)
-- Ralph autonomous-iteration loop scaffolding under .ralph/"
-
-# 4. Push the branch
-git push -u origin feat/ai-chat-multi-agent
-
-# 5. Open the PR with the prepared description
-gh pr create \
-  --title "feat(chat): Ralph multi-agent chat + Ask AI floating button" \
-  --body-file PR_DESCRIPTION.md \
-  --base main
-```
-
-## Option B — without `gh` CLI (open PR manually in the browser)
+## One command
 
 ```bash
-cd /Users/priyansh/Desktop/artha
+cd /Users/priyansh/Desktop/artha && \
+git rm -f lib/utils/cn.ts lib/utils/format.ts scripts/seed.ts 2>/dev/null; \
+git add -A && \
+git commit -m "chore: cleanup + ARCHITECTURE.md + DEVELOPER_GUIDE.md + JSDoc on lib/ralph/*
 
-git checkout -b feat/ai-chat-multi-agent
-git add RALPH_TASK.md PR_DESCRIPTION.md PUSH_THE_PR.md .ralph/ \
-        components/AskAIFab.tsx app/layout.tsx app/chat/page.tsx \
-        lib/ralph/types.ts lib/ralph/router.ts lib/ralph/orchestrator.ts \
-        lib/ralph/agents/mf.ts lib/ralph/agents/compare.ts \
-        lib/ralph/agents/portfolio.ts
-
-git commit -m "feat(chat): Ralph multi-agent chat + Ask AI floating button"
-git push -u origin feat/ai-chat-multi-agent
+- Add ARCHITECTURE.md (plain-English diagrams + data flow + folder map)
+- Add DEVELOPER_GUIDE.md (engineer onboarding + tech-debt map)
+- README points to both docs
+- JSDoc every public export under lib/ralph/* (types, router, orchestrator, agents)
+- Remove dead files: lib/utils/cn.ts, lib/utils/format.ts, scripts/seed.ts
+- Drop scripts exclusion from tsconfig (file is gone)" && \
+git push
 ```
 
-Then open: <https://github.com/PriyanshMathur1/artha/pull/new/feat/ai-chat-multi-agent>
+That's it. Vercel will rebuild automatically.
 
-Paste the contents of `PR_DESCRIPTION.md` into the PR body.
+## What this push contains
 
-## Sanity-check before pushing
+| File | What changed |
+|---|---|
+| `ARCHITECTURE.md` | **New.** Plain-English architecture tour with ASCII diagrams. |
+| `DEVELOPER_GUIDE.md` | **New.** Engineer onboarding + decision trees + tech-debt map. |
+| `README.md` | New "New here?" section linking the two docs. |
+| `lib/ralph/types.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/router.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/orchestrator.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/agents/stock.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/agents/mf.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/agents/portfolio.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/agents/compare.ts` | Module + per-export JSDoc. No code change. |
+| `lib/ralph/agents/general.ts` | Module + per-export JSDoc. No code change. |
+| `.ralph/progress.md` | Iteration 2 log. |
+| `lib/utils/cn.ts` | **Deleted** (orphan; nothing imported it). |
+| `lib/utils/format.ts` | **Deleted** (orphan; nothing imported it). |
+| `scripts/seed.ts` | **Deleted** (broken stale-import dev script). |
+| `tsconfig.json` | Removed the `scripts/` exclude (file is gone). |
 
-```bash
-# See exactly what changed
-git status
-git diff --stat
+## Build risk
 
-# Make sure my new files typecheck
-npx tsc --noEmit 2>&1 | grep -E \
-  "components/AskAIFab\.tsx|app/(layout|chat/page)\.tsx|lib/ralph/(agents/(mf|compare|portfolio)|router|orchestrator|types)\.ts" \
-  || echo "✅ Ralph + FAB files clean"
-```
+Low. Verified:
+- `npx tsc --noEmit` is clean for every Ralph + chat UI + FAB file.
+- The deleted files were universe-validated as orphans (no `import` from
+  any source file in the repo).
+- The remaining pre-existing implicit-any "errors" in the sandbox typecheck
+  only appear because `prisma generate` doesn't run locally; on Vercel they
+  evaporate after the `postinstall` + `build` regenerates the client.
 
-Pre-existing TS errors elsewhere in the repo (`lib/db.ts`, `lib/rebalancer.ts`,
-`scripts/seed.ts`, etc.) are unrelated to this PR — leave them out of scope.
-
-## After the PR opens
-
-Optional: drop screenshots into the PR body as Vercel preview comes up. The
-checklist at the bottom of `PR_DESCRIPTION.md` lists the five views worth
-capturing.
+If something does fail on Vercel, paste the log and I'll patch.

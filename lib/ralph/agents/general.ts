@@ -1,3 +1,12 @@
+/**
+ * LLM fallback agent for Ralph.
+ *
+ * The only path that calls a paid LLM. Used when the router can't pin the
+ * user prompt to a stock/MF/portfolio/compare intent — small talk, vague
+ * questions, follow-up clarifications. Fails open: if `OPENAI_API_KEY` is
+ * missing, the orchestrator catches the throw and emits a polite stub.
+ */
+
 import { openAIChat } from '@/lib/llm/openai';
 import type { AgentFinding, ChatTurn } from '../types';
 
@@ -15,6 +24,10 @@ function compactTurns(turns: ChatTurn[], maxChars = 4000): string {
   return parts.join('\n');
 }
 
+/**
+ * Generate a JSON-shaped answer from the LLM. Returns the finding and the
+ * raw token usage so the orchestrator can include it in `meta.tokenUsage`.
+ */
 export async function runGeneralAnswerAgent(turns: ChatTurn[]): Promise<{ finding: AgentFinding; usage?: { inputTokens?: number; outputTokens?: number; totalTokens?: number } }> {
   const model = process.env.OPENAI_MODEL ?? 'gpt-4.1-mini';
   const transcript = compactTurns(turns);
