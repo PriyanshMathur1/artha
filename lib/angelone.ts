@@ -397,7 +397,6 @@ function getExchangeToken(symbol: string): string {
 }
 
 // Import scrip-tokens.json at module level — instant local lookup, no network.
-// eslint-disable-next-line @typescript-eslint/no-require-imports
 const SCRIP_TOKENS: Record<string, string> = require('./scrip-tokens.json');
 
 async function resolveExchangeToken(symbol: string): Promise<string> {

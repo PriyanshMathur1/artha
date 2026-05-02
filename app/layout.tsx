@@ -1,9 +1,10 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import Link from 'next/link';
-import { Activity, BellRing, LayoutDashboard, Search, Settings } from 'lucide-react';
+import { Activity, BellRing, LayoutDashboard, MessageSquare, Search, Settings } from 'lucide-react';
 import { ClerkProvider } from '@clerk/nextjs';
 import { NavbarAuthButtons } from '@/components/NavbarAuthButtons';
+import { AskAIFab } from '@/components/AskAIFab';
 
 export const metadata: Metadata = {
   title: 'Artha — Smart Investing Workspace',
@@ -35,6 +36,9 @@ function Navbar() {
           <div className="hidden items-center gap-1 sm:flex">
             <Link href="/" className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900">
               <Search className="h-3.5 w-3.5" /> Screener
+            </Link>
+            <Link href="/chat" className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900">
+              <MessageSquare className="h-3.5 w-3.5" /> Chat
             </Link>
             <Link href="/portfolio" className="inline-flex items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-slate-600 hover:bg-slate-100 hover:text-slate-900">
               <LayoutDashboard className="h-3.5 w-3.5" /> Portfolio
@@ -116,6 +120,7 @@ export default function RootLayout({
         <main className="min-h-[calc(100vh-64px)]">
           {children}
         </main>
+        <AskAIFab />
         <Footer />
       </body>
     </html>
