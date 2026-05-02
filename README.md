@@ -18,7 +18,7 @@
 
 <br />
 
-**[→ Try it live: stock-mind-p93x.vercel.app](https://stock-mind-p93x.vercel.app/)**
+**[→ Try it live: artha-olive.vercel.app](https://artha-olive.vercel.app/)**
 
 <br />
 
@@ -30,7 +30,7 @@
 
 ## Live Demo
 
-> **[https://stock-mind-p93x.vercel.app/](https://stock-mind-p93x.vercel.app/)**
+> **[→ Try it live: artha-olive.vercel.app](https://artha-olive.vercel.app/)**
 >
 > Sign up with any email → browse the screener → search any NSE stock (try `RELIANCE`, `TCS`, `INFY`) → click **Deep Scan** to run the AI.
 
