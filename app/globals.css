@@ -1,105 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ------------------------------------------------------------------ */
-/* CSS custom properties — Artha brand tokens                            */
-/* ------------------------------------------------------------------ */
 :root {
-  /* Brand */
-  --color-brand: #7c5cff;
-  --color-brand-dim: #5b3dd6;
-  --color-brand-accent: #ff9933;
-
-  /* Verdict */
-  --color-verdict-strong-buy: #10b981;
-  --color-verdict-buy: #34d399;
-  --color-verdict-hold: #fbbf24;
-  --color-verdict-caution: #f97316;
-  --color-verdict-avoid: #ef4444;
-
-  /* Surface */
-  --radius: 0.75rem;
+  --background: #f5f5f7;
+  --foreground: #1d1d1f;
+  --surface: #ffffff;
+  --surface-muted: #f2f2f7;
+  --border: #d2d2d7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
 }
 
-/* ------------------------------------------------------------------ */
-/* Base resets                                                           */
-/* ------------------------------------------------------------------ */
-@layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  html {
-    -webkit-text-size-adjust: 100%;
-    font-feature-settings: 'kern', 'liga', 'calt';
-  }
-
-  body {
-    @apply bg-slate-50 text-slate-900 antialiased;
-    font-synthesis: none;
-  }
-
-  /* Smooth scrolling */
-  html {
-    scroll-behavior: smooth;
-  }
-
-  /* Focus ring — brand-coloured */
-  :focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2;
-  }
-
-  /* Reduce motion */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
-  }
+* {
+  box-sizing: border-box;
 }
 
-/* ------------------------------------------------------------------ */
-/* Utility layer                                                          */
-/* ------------------------------------------------------------------ */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Inter, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color-scheme: light;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #e2e8f0;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* Range input */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 2px;
+  background: #e2e8f0;
+  outline: none;
+}
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  border: 2px solid #f8fafc;
+}
+input[type='range']::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #4f46e5;
+  cursor: pointer;
+  border: 2px solid #f8fafc;
+}
+
+/* Recharts overrides */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+.recharts-default-legend {
+  font-size: 11px !important;
+}
+
 @layer utilities {
-  /* Tabular numbers for financial figures */
-  .tabular { font-variant-numeric: tabular-nums; }
-
-  /* Positive/negative colour helpers used throughout */
-  .text-pos { @apply text-emerald-600; }
-  .text-neg { @apply text-red-600; }
-
-  /* Smooth transition for chart segments */
-  .animate-bar {
-    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  .font-mono {
+    font-family: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
   }
 }
 
-/* ------------------------------------------------------------------ */
-/* Verdict badge colours (referenced from verdictBadge() in verdict.ts) */
-/* ------------------------------------------------------------------ */
-@layer utilities {
-  .text-verdict-strong-buy  { color: var(--color-verdict-strong-buy); }
-  .text-verdict-buy         { color: var(--color-verdict-buy); }
-  .text-verdict-hold        { color: var(--color-verdict-hold); }
-  .text-verdict-caution     { color: var(--color-verdict-caution); }
-  .text-verdict-avoid       { color: var(--color-verdict-avoid); }
+/* Apple-style light theme safety overrides for legacy dark "stone" classes */
+.bg-stone-950,
+.bg-stone-900,
+.bg-stone-800,
+.bg-stone-700,
+.bg-stone-900\/60,
+.bg-stone-900\/50,
+.bg-stone-900\/40,
+.bg-stone-950\/50,
+.bg-stone-800\/50 {
+  background-color: var(--surface) !important;
+}
 
-  .bg-verdict-strong-buy\/15  { background-color: color-mix(in srgb, var(--color-verdict-strong-buy) 15%, transparent); }
-  .bg-verdict-buy\/15         { background-color: color-mix(in srgb, var(--color-verdict-buy) 15%, transparent); }
-  .bg-verdict-hold\/15        { background-color: color-mix(in srgb, var(--color-verdict-hold) 15%, transparent); }
-  .bg-verdict-caution\/15     { background-color: color-mix(in srgb, var(--color-verdict-caution) 15%, transparent); }
-  .bg-verdict-avoid\/15       { background-color: color-mix(in srgb, var(--color-verdict-avoid) 15%, transparent); }
+.hover\:bg-stone-900\/40:hover,
+.hover\:bg-stone-800:hover,
+.hover\:bg-stone-700:hover {
+  background-color: var(--surface-muted) !important;
+}
 
-  .ring-verdict-strong-buy\/30 { --tw-ring-color: color-mix(in srgb, var(--color-verdict-strong-buy) 30%, transparent); }
-  .ring-verdict-buy\/30        { --tw-ring-color: color-mix(in srgb, var(--color-verdict-buy) 30%, transparent); }
-  .ring-verdict-hold\/30       { --tw-ring-color: color-mix(in srgb, var(--color-verdict-hold) 30%, transparent); }
-  .ring-verdict-caution\/30    { --tw-ring-color: color-mix(in srgb, var(--color-verdict-caution) 30%, transparent); }
-  .ring-verdict-avoid\/30      { --tw-ring-color: color-mix(in srgb, var(--color-verdict-avoid) 30%, transparent); }
+.border-stone-900,
+.border-stone-800,
+.border-stone-700,
+.border-stone-600 {
+  border-color: var(--border) !important;
+}
+
+.text-stone-100,
+.text-stone-200,
+.text-stone-300 {
+  color: var(--text-primary) !important;
+}
+
+.text-stone-400,
+.text-stone-500,
+.text-stone-600,
+.text-stone-700 {
+  color: var(--text-secondary) !important;
 }

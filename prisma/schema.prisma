@@ -1,431 +1,112 @@
-// Artha — Prisma schema
-// Covers all 4 asset classes from day 1: stocks, mutual funds, insurance, retirement/debt.
-// Insurance + Retirement models exist now so we never need a destructive migration to ship those features.
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
-// ---------- USER ----------
-// We don't store passwords (Clerk owns auth). userId = Clerk's stable user ID.
-model UserProfile {
-  id              String   @id @default(cuid())
-  clerkUserId     String   @unique
-  email           String?
-  displayName     String?
-  // India-specific
-  panMasked       String?  // last 4 chars only, for display
-  riskAppetite    RiskAppetite @default(MODERATE)
-  taxRegime       TaxRegime    @default(NEW)
-  fyStartMonth    Int      @default(4)        // April = 4
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  stockHoldings   StockHolding[]
-  mfHoldings      MFHolding[]
-  insurancePolicies InsurancePolicy[]
-  retirementAccounts RetirementAccount[]
-  fdHoldings      FDHolding[]
-  goals           Goal[]
-  watchlist       WatchlistItem[]
-  alerts          Alert[]
-  scanRuns        ScanRun[]
-  settings        UserSetting[]
-}
-
-enum RiskAppetite {
-  CONSERVATIVE
-  MODERATE
-  AGGRESSIVE
-}
-
-enum TaxRegime {
-  OLD
-  NEW
-}
-
-// ---------- STOCK ----------
 model StockHolding {
-  id          String   @id @default(cuid())
-  userId      String
-  user        UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  symbol      String   // e.g. "RELIANCE", "TCS"
-  exchange    Exchange @default(NSE)
-  quantity    Decimal  @db.Decimal(18, 4)
-  avgCost     Decimal  @db.Decimal(18, 4)
-  buyDate     DateTime
-  broker      Broker?  // ANGEL_ONE | ZERODHA | UPSTOX | MANUAL
-  notes       String?
-
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([userId, symbol])
-}
-
-enum Exchange {
-  NSE
-  BSE
-}
-
-enum Broker {
-  ANGEL_ONE
-  ZERODHA
-  UPSTOX
-  GROWW
-  ICICI_DIRECT
-  HDFC_SECURITIES
-  KOTAK_SECURITIES
-  MANUAL
-}
-
-// Global cache of NSE/BSE universe (shared across all users, refreshed periodically)
-model StockUniverse {
-  symbol         String   @id
-  exchange       Exchange @default(NSE)
-  companyName    String
-  isin           String?  @unique
-  sector         String?
-  industry       String?
-  marketCapCr    Decimal? @db.Decimal(18, 2)   // in INR crore
-  niftyIndex     String?  // "NIFTY50" | "NIFTYNEXT50" | "NIFTY100" | "NIFTYMIDCAP150" | "NIFTYSMALLCAP250"
-  active         Boolean  @default(true)
-  updatedAt      DateTime @updatedAt
-}
-
-model FundamentalsCache {
-  symbol         String   @id
-  pe             Float?
-  pb             Float?
-  roe            Float?
-  roce           Float?
-  debtToEquity   Float?
-  eps            Float?
-  bookValue      Float?
-  dividendYield  Float?
-  netMargin      Float?
-  operatingMargin Float?
-  revenueCagr3y  Float?
-  earningsCagr3y Float?
-  promoterHolding Float?
-  pledgedShares  Float?
-  fetchedAt      DateTime @default(now())
-}
-
-// ---------- MUTUAL FUND ----------
-model MFHolding {
-  id           String   @id @default(cuid())
+  id           Int      @id @default(autoincrement())
   userId       String
-  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  schemeCode   String   // MFAPI scheme code
-  schemeName   String
-  folioNo      String?
-  units        Decimal  @db.Decimal(18, 4)
-  investedAmount Decimal @db.Decimal(18, 2)
-  buyNav       Decimal  @db.Decimal(18, 4)
-  buyDate      DateTime
-  isSip        Boolean  @default(false)
-  sipDay       Int?     // day of month
-  sipAmount    Decimal? @db.Decimal(18, 2)
-  notes        String?
-
+  symbol       String
+  accountId    String   @default("default")
+  name         String
+  sector       String   @default("")
+  qty          Float
+  avgBuyPrice  Float
+  buyDate      DateTime @default(now())
+  brokerName   String   @default("Manual")
+  notes        String   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  @@index([userId, schemeCode])
+  @@unique([userId, symbol, accountId])
+  @@index([userId])
 }
 
-model MFScheme {
-  schemeCode   String   @id
-  schemeName   String
-  fundHouse    String?
-  category     String?  // "Equity - Large Cap", "Hybrid - Aggressive", etc.
-  subCategory  String?
-  type         MFType?
-  expenseRatio Float?
-  aumCr        Float?
-  inceptionDate DateTime?
-  benchmark    String?
-  fundManager  String?
-  isin         String?
-  active       Boolean  @default(true)
-  updatedAt    DateTime @updatedAt
-}
+model MFHolding {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  schemeCode     String
+  schemeName     String
+  amcName        String   @default("")
+  category       String   @default("Equity")
+  units          Float
+  avgNav         Float
+  investedAmount Float
+  buyDate        DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-enum MFType {
-  EQUITY
-  DEBT
-  HYBRID
-  INDEX
-  ETF
-  GOLD
-  INTERNATIONAL
-  LIQUID
-  ELSS
+  @@unique([userId, schemeCode])
+  @@index([userId])
 }
 
 model MFNavCache {
-  id           String   @id @default(cuid())
-  schemeCode   String
-  navDate      DateTime @db.Date
-  nav          Decimal  @db.Decimal(18, 4)
+  id         Int      @id @default(autoincrement())
+  schemeCode String
+  navDate    String
+  nav        Float
+  createdAt  DateTime @default(now())
 
   @@unique([schemeCode, navDate])
-  @@index([schemeCode, navDate])
-}
-
-// ---------- INSURANCE (v2 ready) ----------
-model InsurancePolicy {
-  id           String   @id @default(cuid())
-  userId       String
-  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  type         InsuranceType
-  insurer      String
-  policyNumber String?
-  policyName   String?
-  sumAssured   Decimal  @db.Decimal(18, 2)
-  premium      Decimal  @db.Decimal(18, 2)
-  premiumFrequency PremiumFrequency @default(YEARLY)
-  startDate    DateTime
-  maturityDate DateTime?
-  nextDueDate  DateTime?
-  // ULIP-specific
-  currentValue Decimal? @db.Decimal(18, 2)   // ULIP cash value
-  fundName     String?
-  // Health-specific
-  coversFamily Boolean  @default(false)
-  members      Int?
-  notes        String?
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId, type])
-}
-
-enum InsuranceType {
-  TERM
-  HEALTH
-  ULIP
-  ENDOWMENT
-  MOTOR
-  HOME
-  TRAVEL
-  CRITICAL_ILLNESS
-  PERSONAL_ACCIDENT
-}
-
-enum PremiumFrequency {
-  MONTHLY
-  QUARTERLY
-  HALF_YEARLY
-  YEARLY
-  ONE_TIME
-}
-
-// ---------- RETIREMENT / DEBT (v2 ready) ----------
-model RetirementAccount {
-  id           String   @id @default(cuid())
-  userId       String
-  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  type         RetirementType
-  institutionName String?
-  accountNumber String?
-  contributedTotal Decimal @db.Decimal(18, 2)
-  currentBalance  Decimal @db.Decimal(18, 2)
-  monthlyContribution Decimal? @db.Decimal(18, 2)
-  interestRate Float?
-  startDate    DateTime
-  maturityDate DateTime?
-  // NPS-specific
-  npsTier      Int?     // 1 or 2
-  equityAllocation Float? // 0-1
-  notes        String?
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId, type])
-}
-
-enum RetirementType {
-  EPF
-  PPF
-  NPS
-  VPF
-  SUKANYA_SAMRIDDHI
-  SCSS         // Senior Citizens
-  ATAL_PENSION
-}
-
-model FDHolding {
-  id           String   @id @default(cuid())
-  userId       String
-  user         UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  bankName     String
-  accountNumber String?
-  principal    Decimal  @db.Decimal(18, 2)
-  interestRate Float
-  startDate    DateTime
-  maturityDate DateTime
-  payoutType   FDPayout @default(CUMULATIVE)
-  notes        String?
-
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([userId])
-}
-
-enum FDPayout {
-  CUMULATIVE
-  MONTHLY
-  QUARTERLY
-  HALF_YEARLY
-  YEARLY
-}
-
-// ---------- GOALS (cross-asset) ----------
-model Goal {
-  id            String   @id @default(cuid())
-  userId        String
-  user          UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  name          String
-  type          GoalType
-  targetAmount  Decimal  @db.Decimal(18, 2)
-  targetDate    DateTime
-  currentAmount Decimal  @default(0) @db.Decimal(18, 2)
-  expectedReturn Float?  // user's assumption
-  inflationRate Float?  @default(6.0)
-  priority      Int      @default(2) // 1=high, 2=medium, 3=low
-  notes         String?
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  @@index([userId])
-}
-
-enum GoalType {
-  RETIREMENT
-  CHILD_EDUCATION
-  CHILD_MARRIAGE
-  HOME_PURCHASE
-  CAR_PURCHASE
-  TRAVEL
-  EMERGENCY_FUND
-  WEALTH_BUILDING
-  OTHER
-}
-
-// ---------- WATCHLIST + ALERTS ----------
-model WatchlistItem {
-  id        String   @id @default(cuid())
-  userId    String
-  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assetType AssetType
-  symbol    String   // for stocks, mf scheme code, insurance policy id, etc.
-  notes     String?
-  createdAt DateTime @default(now())
-
-  @@unique([userId, assetType, symbol])
-}
-
-enum AssetType {
-  STOCK
-  MF
-  INSURANCE
-  RETIREMENT
-  FD
+  @@index([schemeCode])
 }
 
 model Alert {
-  id        String   @id @default(cuid())
-  userId    String
-  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assetType AssetType
-  symbol    String
-  type      AlertType
-  threshold Float?
-  active    Boolean  @default(true)
-  triggeredAt DateTime?
-  createdAt DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  userId        String
+  type          String
+  title         String
+  message       String
+  severity      String   @default("medium")
+  isRead        Boolean  @default(false)
+  relatedSymbol String   @default("")
+  createdAt     DateTime @default(now())
 
-  @@index([userId, active])
+  @@index([userId])
 }
 
-enum AlertType {
-  PRICE_ABOVE
-  PRICE_BELOW
-  VERDICT_CHANGE       // strong-buy → buy etc.
-  POLICY_RENEWAL_DUE
-  FD_MATURITY
-  SIP_DUE
-  SECTOR_OVERWEIGHT
-  GOAL_OFF_TRACK
+model RebalanceHistory {
+  id      Int      @id @default(autoincrement())
+  userId  String
+  report  String
+  runDate DateTime @default(now())
+
+  @@index([userId])
 }
 
-// ---------- DEEP SCAN (multi-agent verdict) ----------
-// Caches the most recent agent run per (assetType, symbol). Older runs kept for history/diff.
-model ScanRun {
-  id          String   @id @default(cuid())
-  userId      String?  // null = global cache, hot stocks scanned for everyone
-  user        UserProfile? @relation(fields: [userId], references: [id], onDelete: SetNull)
+model Watchlist {
+  id      Int      @id @default(autoincrement())
+  userId  String
+  symbol  String
+  name    String
+  sector  String   @default("")
+  addedAt DateTime @default(now())
 
-  assetType   AssetType
-  symbol      String
-  composite   Float          // 0-10
-  verdict     Verdict
-  rationale   String?        @db.Text
-  runAt       DateTime @default(now())
-
-  agentScores AgentScore[]
-
-  @@index([assetType, symbol, runAt])
+  @@unique([userId, symbol])
+  @@index([userId])
 }
 
-enum Verdict {
-  STRONG_BUY
-  BUY
-  HOLD
-  CAUTION
-  AVOID
+// Global — market data shared across all users
+model FundamentalsCache {
+  id            Int      @id @default(autoincrement())
+  symbol        String   @unique
+  pe            Float?
+  pb            Float?
+  marketCap     Float?
+  roe           Float?
+  debtToEquity  Float?
+  revenueGrowth Float?
+  eps           Float?
+  dividendYield Float?
+  cachedAt      DateTime @default(now())
 }
 
-model AgentScore {
-  id         String   @id @default(cuid())
-  scanRunId  String
-  scanRun    ScanRun  @relation(fields: [scanRunId], references: [id], onDelete: Cascade)
-  agentName  String   // "fundamental", "moat", "manager-quality" etc.
-  score      Float    // 0-10
-  weight     Float    // 0-1
-  rationale  String?  @db.Text
-  signals    Json?    // structured per-agent payload
-  createdAt  DateTime @default(now())
-
-  @@index([scanRunId, agentName])
-}
-
-// ---------- SETTINGS / TOKENS ----------
-model UserSetting {
-  id        String   @id @default(cuid())
-  userId    String
-  user      UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key       String
-  value     String   @db.Text     // JSON-serialized; sensitive fields encrypted at app layer
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, key])
+// Global — Angel One token map shared across all users
+model Settings {
+  id    Int    @id @default(autoincrement())
+  key   String @unique
+  value String
 }

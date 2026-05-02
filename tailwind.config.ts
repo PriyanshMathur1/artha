@@ -2,53 +2,57 @@ import type { Config } from 'tailwindcss';
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './pages/**/*.{js,ts,jsx,tsx,mdx}',
     './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './lib/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx,mdx}',
   ],
   theme: {
     extend: {
+      fontFamily: {
+        serif: ['Georgia', 'Times New Roman', 'serif'],
+        mono: ['JetBrains Mono', 'Fira Code', 'Consolas', 'monospace'],
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
-        // Artha brand palette — deep indigo (wisdom) + saffron accent (India) + jade (growth)
-        bg: {
-          DEFAULT: '#0a0a0f',
-          card: '#13131a',
-          subtle: '#1a1a24',
+        stone: {
+          925: '#1a1714',
+          950: '#0c0a09',
+          975: '#080604',
         },
-        ink: {
-          DEFAULT: '#e6e6f0',
-          muted: '#9999ab',
-          dim: '#5c5c70',
+        amber: {
+          400: '#fbbf24',
+          500: '#f59e0b',
         },
-        brand: {
-          50:  '#f3f0ff',
-          100: '#e9e3ff',
-          200: '#d5caff',
-          300: '#b8a4ff',
-          400: '#9a73ff',
-          500: '#7c5cff',  // DEFAULT
-          600: '#6a3dff',
-          700: '#5b3dd6',  // dim
-          800: '#4b30b0',
-          900: '#3b2580',
-          DEFAULT: '#7c5cff',
-          accent: '#ff9933',   // saffron
+        cyan: {
+          400: '#22d3ee',
+          500: '#06b6d4',
         },
-        verdict: {
-          'strong-buy': '#10b981',
-          buy: '#34d399',
-          hold: '#fbbf24',
-          caution: '#f97316',
-          avoid: '#ef4444',
+        violet: {
+          400: '#a78bfa',
+          500: '#8b5cf6',
+        },
+        emerald: {
+          400: '#34d399',
+          500: '#10b981',
         },
       },
-      fontFamily: {
-        sans: ['ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'monospace'],
+      animation: {
+        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in': 'fadeIn 0.5s ease-in-out',
+        'slide-up': 'slideUp 0.4s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        slideUp: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
     },
   },
   plugins: [],
 };
-
 export default config;

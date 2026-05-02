@@ -1,364 +1,321 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Shell } from '@/components/layout/Shell';
-import { Card, CardHeader, StatCard } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
-import { formatINR } from '@/lib/utils/money';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Plus, RefreshCw, BarChart2, TrendingUp, Bell } from 'lucide-react';
+import { PortfolioSummary, EmptyPortfolio } from '@/components/Portfolio/PortfolioSummary';
+import { ZerodhaImport } from '@/components/Portfolio/ZerodhaImport';
+import { AngelOnePanel } from '@/components/AngelOnePanel';
 
-/* ── Types ──────────────────────────────────────────────────────────── */
-interface StockHolding {
-  id: string;
+interface StockRow {
   symbol: string;
-  quantity: number;
-  avgCost: number;
-  buyDate: string;
-  broker?: string;
+  name: string;
+  sector: string;
+  pnlPct: number;
+  currentValue: number;
+  invested: number;
+  pnl: number;
+  accountId: string;
 }
 
-interface MFHolding {
-  id: string;
+interface MFRow {
   schemeCode: string;
   schemeName: string;
-  units: number;
+  pnlPct: number;
+  currentValue: number;
   investedAmount: number;
-  buyDate: string;
+  pnl: number;
 }
 
-type Tab = 'stocks' | 'mutual-funds';
-
-/* ── Helpers ────────────────────────────────────────────────────────── */
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric',
-  });
+interface OverviewData {
+  summary: {
+    totalValue: number; totalInvested: number; totalPnL: number;
+    totalPnLPct: number; totalStockValue: number; totalMFValue: number; todayChange: number;
+  };
+  stocks: StockRow[];
+  mfs: MFRow[];
+  sectorAllocation: Record<string, number>;
+  priceSource?: 'angel' | 'yahoo';
 }
 
-/* ── Add-Stock form ─────────────────────────────────────────────────── */
-function AddStockForm({ onAdded }: { onAdded: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    symbol: '', quantity: '', avgCost: '', buyDate: '',
-  });
+function fmt(n: number) {
+  return n.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const res = await fetch('/api/portfolio/stocks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          symbol: form.symbol.toUpperCase().trim(),
-          quantity: Number(form.quantity),
-          avgCost: Number(form.avgCost),
-          buyDate: new Date(form.buyDate).toISOString(),
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to add');
-      setForm({ symbol: '', quantity: '', avgCost: '', buyDate: '' });
-      setOpen(false);
-      onAdded();
-    } catch {
-      alert('Failed to add holding. Check details and try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
+function AccountSummaryCards({ stocks, mfValue, mfInvested, mfPnL }: {
+  stocks: StockRow[];
+  mfValue: number;
+  mfInvested: number;
+  mfPnL: number;
+}) {
+  const stockValue    = stocks.reduce((a, s) => a + s.currentValue, 0);
+  const stockInvested = stocks.reduce((a, s) => a + s.invested, 0);
+  const stockPnL      = stocks.reduce((a, s) => a + s.pnl, 0);
+  const totalValue    = stockValue + mfValue;
+  const totalInvested = stockInvested + mfInvested;
+  const totalPnL      = stockPnL + mfPnL;
+  const totalPnLPct   = totalInvested > 0 ? (totalPnL / totalInvested) * 100 : 0;
 
-  if (!open) {
-    return (
-      <Button size="sm" onClick={() => setOpen(true)}>+ Add stock</Button>
-    );
-  }
+  const cards = [
+    { label: 'Total Value', value: `₹${fmt(totalValue)}`, sub: `Invested ₹${fmt(totalInvested)}`, color: 'text-stone-100' },
+    { label: 'Total P&L', value: `${totalPnL >= 0 ? '+' : ''}₹${fmt(totalPnL)}`, sub: `${totalPnLPct >= 0 ? '+' : ''}${totalPnLPct.toFixed(2)}%`, color: totalPnL >= 0 ? 'text-emerald-400' : 'text-red-400' },
+    { label: 'Stocks', value: `₹${fmt(stockValue)}`, sub: `${stockPnL >= 0 ? '+' : ''}₹${fmt(stockPnL)} P&L`, color: 'text-amber-400' },
+    { label: 'Mutual Funds', value: `₹${fmt(mfValue)}`, sub: `${mfPnL >= 0 ? '+' : ''}₹${fmt(mfPnL)} P&L`, color: 'text-blue-400' },
+  ];
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-brand-200 bg-brand-50 p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-brand-800">Add Stock Holding</h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {[
-          { name: 'symbol', label: 'Symbol', placeholder: 'RELIANCE' },
-          { name: 'quantity', label: 'Qty', placeholder: '10', type: 'number' },
-          { name: 'avgCost', label: 'Avg Cost (₹)', placeholder: '2500', type: 'number' },
-          { name: 'buyDate', label: 'Buy Date', placeholder: '', type: 'date' },
-        ].map((f) => (
-          <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-600">{f.label}</label>
-            <input
-              required
-              type={f.type ?? 'text'}
-              placeholder={f.placeholder}
-              value={form[f.name as keyof typeof form]}
-              onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-300"
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" loading={loading}>Save</Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-      </div>
-    </form>
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {cards.map((c) => (
+        <div key={c.label} className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+          <p className="text-xs text-stone-500 mb-1">{c.label}</p>
+          <p className={`text-lg font-bold font-mono ${c.color}`}>{c.value}</p>
+          <p className="text-xs text-stone-600 mt-0.5">{c.sub}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 
-/* ── Add-MF form ────────────────────────────────────────────────────── */
-function AddMFForm({ onAdded }: { onAdded: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    schemeCode: '', schemeName: '', units: '', investedAmount: '', buyDate: '',
-  });
+export default function PortfolioDashboard() {
+  const [data, setData] = useState<OverviewData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [activeAccount, setActiveAccount] = useState<string>('all');
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  async function load(showRefresh = false) {
+    if (showRefresh) setRefreshing(true);
+    else setLoading(true);
     try {
-      const res = await fetch('/api/portfolio/mf', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          schemeCode: form.schemeCode.trim(),
-          schemeName: form.schemeName.trim(),
-          units: Number(form.units),
-          investedAmount: Number(form.investedAmount),
-          buyDate: new Date(form.buyDate).toISOString(),
-        }),
-      });
-      if (!res.ok) throw new Error('Failed to add');
-      setForm({ schemeCode: '', schemeName: '', units: '', investedAmount: '', buyDate: '' });
-      setOpen(false);
-      onAdded();
-    } catch {
-      alert('Failed to add holding. Check details and try again.');
+      const res = await fetch('/api/portfolio/overview');
+      const d = await res.json() as OverviewData;
+      setData(d);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }
 
-  if (!open) {
-    return <Button size="sm" onClick={() => setOpen(true)}>+ Add fund</Button>;
-  }
+  useEffect(() => { load(); }, []);
+
+  const accounts = data
+    ? ['all', ...Array.from(new Set(data.stocks.map((s) => s.accountId))).sort()]
+    : ['all'];
+
+  const visibleStocks = !data ? [] :
+    activeAccount === 'all' ? data.stocks : data.stocks.filter((s) => s.accountId === activeAccount);
+
+  // MFs are not account-specific — show only in "all" view, hide per-account
+  const showMFs = activeAccount === 'all';
+  const mfValue    = data?.mfs.reduce((a, m) => a + m.currentValue, 0) ?? 0;
+  const mfInvested = data?.mfs.reduce((a, m) => a + m.investedAmount, 0) ?? 0;
+  const mfPnL      = data?.mfs.reduce((a, m) => a + m.pnl, 0) ?? 0;
+
+  // Sector allocation for visible stocks only
+  const sectorAlloc: Record<string, number> = {};
+  const totalVisible = visibleStocks.reduce((a, s) => a + s.currentValue, 0);
+  visibleStocks.forEach((s) => {
+    if (s.currentValue > 0 && s.sector)
+      sectorAlloc[s.sector] = (sectorAlloc[s.sector] ?? 0) + s.currentValue;
+  });
+  const sectorPcts = Object.entries(sectorAlloc)
+    .map(([k, v]) => [k, totalVisible > 0 ? (v / totalVisible) * 100 : 0] as [string, number])
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8);
+
+  const isEmpty = data && data.stocks.length === 0 && data.mfs.length === 0;
 
   return (
-    <form onSubmit={submit} className="rounded-xl border border-brand-200 bg-brand-50 p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-brand-800">Add MF Holding</h3>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {[
-          { name: 'schemeCode', label: 'Scheme Code', placeholder: '120503' },
-          { name: 'schemeName', label: 'Fund Name', placeholder: 'Parag Parikh Flexi Cap' },
-          { name: 'units', label: 'Units', placeholder: '100.234', type: 'number' },
-          { name: 'investedAmount', label: 'Invested (₹)', placeholder: '50000', type: 'number' },
-          { name: 'buyDate', label: 'Buy / SIP Start Date', placeholder: '', type: 'date' },
-        ].map((f) => (
-          <div key={f.name} className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-slate-600">{f.label}</label>
-            <input
-              required
-              type={f.type ?? 'text'}
-              placeholder={f.placeholder}
-              value={form[f.name as keyof typeof form]}
-              onChange={(e) => setForm((prev) => ({ ...prev, [f.name]: e.target.value }))}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm focus:border-brand-400 focus:outline-none focus:ring-1 focus:ring-brand-300"
-            />
-          </div>
-        ))}
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" size="sm" loading={loading}>Save</Button>
-        <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
-      </div>
-    </form>
-  );
-}
-
-/* ── Main page ──────────────────────────────────────────────────────── */
-export default function PortfolioPage() {
-  const [tab, setTab] = useState<Tab>('stocks');
-  const [stocks, setStocks] = useState<StockHolding[]>([]);
-  const [mfs, setMFs] = useState<MFHolding[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  const fetchAll = useCallback(async () => {
-    setLoadingData(true);
-    try {
-      const [sRes, mRes] = await Promise.all([
-        fetch('/api/portfolio/stocks'),
-        fetch('/api/portfolio/mf'),
-      ]);
-      if (sRes.ok) setStocks(await sRes.json());
-      if (mRes.ok) setMFs(await mRes.json());
-    } finally {
-      setLoadingData(false);
-    }
-  }, []);
-
-  useEffect(() => { void fetchAll(); }, [fetchAll]);
-
-  async function deleteStock(id: string) {
-    if (!confirm('Remove this holding?')) return;
-    await fetch(`/api/portfolio/stocks?id=${id}`, { method: 'DELETE' });
-    void fetchAll();
-  }
-
-  async function deleteMF(id: string) {
-    if (!confirm('Remove this holding?')) return;
-    await fetch(`/api/portfolio/mf?id=${id}`, { method: 'DELETE' });
-    void fetchAll();
-  }
-
-  const totalStocksValue = stocks.reduce((s, h) => s + h.quantity * h.avgCost, 0);
-  const totalMFValue = mfs.reduce((s, h) => s + h.investedAmount, 0);
-
-  return (
-    <Shell>
-      <div className="space-y-6">
-        {/* Header */}
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Portfolio</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Manually add or import your holdings
-          </p>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-stone-100">Portfolio</h1>
+            {data?.priceSource === 'angel' && (
+              <span className="text-[10px] font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded px-2 py-0.5">
+                Angel One live prices
+              </span>
+            )}
+          </div>
+          <p className="text-stone-500 text-sm mt-0.5">Your investments at a glance</p>
         </div>
-
-        {/* Summary KPIs */}
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <StatCard
-            label="Total Holdings (cost)"
-            value={formatINR(totalStocksValue + totalMFValue, { compact: true })}
-          />
-          <StatCard label="Stocks" value={formatINR(totalStocksValue, { compact: true })} />
-          <StatCard label="Mutual Funds" value={formatINR(totalMFValue, { compact: true })} />
-          <StatCard
-            label="Positions"
-            value={String(stocks.length + mfs.length)}
-            change={`${stocks.length} stocks · ${mfs.length} MFs`}
-          />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => load(true)}
+            disabled={refreshing}
+            className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-200 border border-stone-700 rounded-lg px-3 py-1.5"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <Link href="/portfolio/stocks" className="flex items-center gap-1.5 text-xs bg-amber-500 text-stone-950 font-semibold rounded-lg px-3 py-1.5 hover:bg-amber-400">
+            <Plus className="h-3.5 w-3.5" /> Add Stock
+          </Link>
+          <Link href="/portfolio/mutual-funds" className="flex items-center gap-1.5 text-xs bg-blue-600 text-white font-semibold rounded-lg px-3 py-1.5 hover:bg-blue-500">
+            <Plus className="h-3.5 w-3.5" /> Add MF
+          </Link>
         </div>
+      </div>
 
-        {/* Tab switcher */}
-        <div className="flex gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 w-fit">
-          {(['stocks', 'mutual-funds'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                tab === t
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              {t === 'stocks' ? `Stocks (${stocks.length})` : `Mutual Funds (${mfs.length})`}
-            </button>
+      {/* Account tabs */}
+      {accounts.length > 2 && (
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
+          {accounts.map((acc) => {
+            const count = acc === 'all'
+              ? data?.stocks.length ?? 0
+              : data?.stocks.filter((s) => s.accountId === acc).length ?? 0;
+            const accValue = acc === 'all'
+              ? (data?.summary.totalStockValue ?? 0)
+              : (data?.stocks.filter((s) => s.accountId === acc).reduce((a, s) => a + s.currentValue, 0) ?? 0);
+            return (
+              <button
+                key={acc}
+                onClick={() => setActiveAccount(acc)}
+                className={`flex flex-col items-start px-4 py-2.5 rounded-xl border transition-all ${
+                  activeAccount === acc
+                    ? 'border-amber-500 bg-amber-500/10'
+                    : 'border-stone-700 hover:border-stone-600 bg-stone-900'
+                }`}
+              >
+                <span className={`text-xs font-semibold ${activeAccount === acc ? 'text-amber-400' : 'text-stone-400'}`}>
+                  {acc === 'all' ? 'All Accounts' : `Account ${acc}`}
+                </span>
+                <span className="text-[10px] text-stone-500 mt-0.5">
+                  {count} stocks · ₹{fmt(accValue)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {loading && (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1,2,3,4].map((i) => (
+            <div key={i} className="bg-stone-900 border border-stone-800 rounded-xl p-5 animate-pulse h-24" />
           ))}
         </div>
+      )}
 
-        {/* Stocks tab */}
-        {tab === 'stocks' && (
-          <div className="space-y-4">
-            <AddStockForm onAdded={fetchAll} />
+      {isEmpty && <EmptyPortfolio />}
 
-            <Card noPadding>
-              {loadingData ? (
-                <div className="p-8 text-center text-sm text-slate-400">Loading…</div>
-              ) : stocks.length === 0 ? (
-                <div className="p-8 text-center text-sm text-slate-400">
-                  No stocks yet. Add your first holding above.
+      {data && !isEmpty && (
+        <>
+          <AccountSummaryCards
+            stocks={visibleStocks}
+            mfValue={showMFs ? mfValue : 0}
+            mfInvested={showMFs ? mfInvested : 0}
+            mfPnL={showMFs ? mfPnL : 0}
+          />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Stocks card */}
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <BarChart2 className="h-4 w-4 text-amber-400" />
+                    <h2 className="font-semibold text-stone-200">
+                      {activeAccount === 'all' ? 'Stocks' : `Account ${activeAccount} — Stocks`}
+                    </h2>
+                    <span className="text-xs text-stone-500">({visibleStocks.length})</span>
+                  </div>
+                  <Link href="/portfolio/stocks" className="text-xs text-amber-400 hover:text-amber-300">View all →</Link>
                 </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50/60">
-                    <tr>
-                      {['Symbol', 'Qty', 'Avg Cost', 'Invested', 'Buy Date', 'Broker', ''].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {stocks.map((h) => (
-                      <tr key={h.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-4 py-3 font-mono text-xs font-semibold text-slate-900">{h.symbol}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">{h.quantity}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">{formatINR(h.avgCost)}</td>
-                        <td className="px-4 py-3 tabular-nums font-medium text-slate-900">
-                          {formatINR(h.quantity * h.avgCost, { compact: true })}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">{formatDate(h.buyDate)}</td>
-                        <td className="px-4 py-3">
-                          {h.broker && <Badge variant="neutral">{h.broker}</Badge>}
-                        </td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => deleteStock(h.id)}
-                            className="text-xs text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </Card>
-          </div>
-        )}
+                {visibleStocks.slice(0, 6).map((s) => (
+                  <div key={`${s.accountId}-${s.symbol}`} className="flex items-center justify-between py-2 border-b border-stone-800/50 last:border-0">
+                    <div>
+                      <span className="text-sm font-mono font-bold text-stone-200">{s.symbol}</span>
+                      <span className="text-xs text-stone-500 ml-2">{s.sector}</span>
+                      {activeAccount === 'all' && accounts.length > 2 && (
+                        <span className="text-[10px] text-stone-600 ml-1.5 border border-stone-800 rounded px-1">
+                          {s.accountId}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-stone-400">₹{fmt(s.currentValue)}</p>
+                      <p className={`text-xs font-semibold ${s.pnlPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                        {s.pnlPct >= 0 ? '+' : ''}{s.pnlPct.toFixed(2)}%
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {visibleStocks.length > 6 && (
+                  <p className="text-xs text-stone-600 mt-3 text-center">
+                    +{visibleStocks.length - 6} more ·{' '}
+                    <Link href="/portfolio/stocks" className="text-amber-500 hover:text-amber-400">View all</Link>
+                  </p>
+                )}
+              </div>
 
-        {/* MF tab */}
-        {tab === 'mutual-funds' && (
-          <div className="space-y-4">
-            <AddMFForm onAdded={fetchAll} />
-
-            <Card noPadding>
-              {loadingData ? (
-                <div className="p-8 text-center text-sm text-slate-400">Loading…</div>
-              ) : mfs.length === 0 ? (
-                <div className="p-8 text-center text-sm text-slate-400">
-                  No mutual fund holdings yet. Add your first above.
+              {/* MF card — only in "all" view */}
+              {showMFs && data.mfs.length > 0 && (
+                <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-blue-400" />
+                      <h2 className="font-semibold text-stone-200">Mutual Funds</h2>
+                      <span className="text-xs text-stone-500">({data.mfs.length})</span>
+                    </div>
+                    <Link href="/portfolio/mutual-funds" className="text-xs text-blue-400 hover:text-blue-300">View all →</Link>
+                  </div>
+                  {data.mfs.slice(0, 5).map((m) => (
+                    <div key={m.schemeCode} className="flex items-center justify-between py-2 border-b border-stone-800/50 last:border-0">
+                      <span className="text-xs text-stone-300 flex-1 truncate pr-4">{m.schemeName}</span>
+                      <div className="text-right">
+                        <p className="text-xs text-stone-400">₹{fmt(m.currentValue ?? 0)}</p>
+                        <p className={`text-xs font-semibold ${m.pnlPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {m.pnlPct >= 0 ? '+' : ''}{m.pnlPct.toFixed(2)}%
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <table className="w-full text-sm">
-                  <thead className="border-b border-slate-200 bg-slate-50/60">
-                    <tr>
-                      {['Fund', 'Scheme Code', 'Units', 'Invested', 'Buy Date', ''].map((h) => (
-                        <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          {h}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {mfs.map((h) => (
-                      <tr key={h.id} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="px-4 py-3 text-slate-800 max-w-xs truncate">{h.schemeName}</td>
-                        <td className="px-4 py-3 font-mono text-xs text-slate-500">{h.schemeCode}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-700">{Number(h.units).toFixed(3)}</td>
-                        <td className="px-4 py-3 tabular-nums font-medium text-slate-900">
-                          {formatINR(h.investedAmount, { compact: true })}
-                        </td>
-                        <td className="px-4 py-3 text-slate-500">{formatDate(h.buyDate)}</td>
-                        <td className="px-4 py-3">
-                          <button
-                            onClick={() => deleteMF(h.id)}
-                            className="text-xs text-red-500 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
               )}
-            </Card>
+            </div>
+
+            <div className="space-y-4">
+              {/* Sector allocation — filtered to active account */}
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+                <h2 className="font-semibold text-stone-200 mb-4">
+                  Sector Allocation
+                  {activeAccount !== 'all' && <span className="text-xs font-normal text-stone-500 ml-1">· {activeAccount}</span>}
+                </h2>
+                {sectorPcts.map(([sector, pct]) => (
+                  <div key={sector} className="mb-2">
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-stone-400">{sector}</span>
+                      <span className="text-stone-300 font-mono">{pct.toFixed(1)}%</span>
+                    </div>
+                    <div className="h-1.5 bg-stone-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-amber-500/60 rounded-full" style={{ width: `${Math.min(pct, 100)}%` }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="bg-stone-900 border border-stone-800 rounded-xl p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <Bell className="h-4 w-4 text-stone-400" />
+                  <h2 className="font-semibold text-stone-200">Quick Actions</h2>
+                </div>
+                <div className="space-y-2">
+                  <Link href="/rebalance" className="flex items-center gap-2 w-full text-xs text-stone-400 hover:text-amber-400 border border-stone-700 hover:border-amber-500/40 rounded-lg px-3 py-2 transition-colors">
+                    Run Rebalancing Analysis
+                  </Link>
+                  <Link href="/alerts" className="flex items-center gap-2 w-full text-xs text-stone-400 hover:text-stone-200 border border-stone-700 rounded-lg px-3 py-2 transition-colors">
+                    View All Alerts
+                  </Link>
+                </div>
+              </div>
+
+              <AngelOnePanel onSynced={() => load(true)} />
+              <ZerodhaImport onImported={() => load(true)} />
+            </div>
           </div>
-        )}
-      </div>
-    </Shell>
+        </>
+      )}
+    </div>
   );
 }

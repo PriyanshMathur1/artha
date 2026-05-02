@@ -2,9 +2,20 @@ import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
   '/',
+  '/stock/(.*)',
   '/sign-in(.*)',
   '/sign-up(.*)',
-  '/api/health',
+  '/manifest.json',
+  '/sw.js',
+  '/api/screener',
+  '/api/search',
+  '/api/nse-search',
+  '/api/signals',
+  '/api/analyze/(.*)',
+  '/api/history/(.*)',
+  '/api/fundamentals/(.*)',
+  '/api/news/ticker',
+  '/api/quote/(.*)',   // allow public quote lookups for screener preview
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -14,10 +25,5 @@ export default clerkMiddleware(async (auth, req) => {
 });
 
 export const config = {
-  matcher: [
-    // Skip Next internals and static assets
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run on API routes
-    '/(api|trpc)(.*)',
-  ],
+  matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'],
 };

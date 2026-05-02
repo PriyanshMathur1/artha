@@ -1,148 +1,235 @@
-# Artha
+<div align="center">
 
-> Wealth with purpose. AI-powered wealth management for the Indian working professional.
+<img src="https://img.shields.io/badge/Next.js-15.5-black?style=for-the-badge&logo=next.js" />
+<img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" />
+<img src="https://img.shields.io/badge/Clerk-Auth-6C47FF?style=for-the-badge&logo=clerk&logoColor=white" />
+<img src="https://img.shields.io/badge/Neon-PostgreSQL-00E699?style=for-the-badge&logo=postgresql&logoColor=black" />
+<a href="https://stock-mind-p93x.vercel.app/">
+  <img src="https://img.shields.io/badge/Vercel-Live%20Demo-000000?style=for-the-badge&logo=vercel" />
+</a>
 
-Artha is a multi-asset wealth platform: **stocks, mutual funds, insurance, EPF/PPF/NPS, FDs**. Every asset gets scored by a **multi-agent deep-scan engine** that produces a verdict (`Strong Buy → Avoid`) along with the per-agent reasoning.
+<br /><br />
 
-Built on the same free-tier-first stack as StockMind: Next.js 15 + Clerk + Neon Postgres + Prisma, deployed on Vercel.
+# StockMind Terminal
 
----
+### AI-powered investment terminal for the Indian retail investor.
+### Screen 500+ NSE stocks · 6-agent deep analysis · portfolio sync from your broker.
 
-## What's in v1
+<br />
 
-| Module | Status |
-| --- | --- |
-| Stock screener (NSE/BSE) | Yes |
-| Stock 6-agent deep scan | Yes |
-| MF screener + tracking | Yes |
-| MF 6-agent deep scan | Yes |
-| Portfolio dashboard | Yes |
-| Net-worth allocation | Yes |
-| Insurance tracking | Schema ready, UI in v2 |
-| EPF / PPF / NPS / FD | Schema ready, UI in v2 |
-| Goal-based planning | Schema ready, UI in v2 |
-| Account Aggregator (AA) | Phase 4 |
-| Broker auto-sync | Phase 3 |
+**[→ Try it live: stock-mind-p93x.vercel.app](https://stock-mind-p93x.vercel.app/)**
 
----
+<br />
 
-## The Multi-Agent Engine
+> *A Bloomberg Terminal for Bharat — without the $24,000/year price tag.*
 
-Each asset class has its own dedicated agent suite. Every agent lives in its own folder with its own scoring logic, signals, and rationale generator.
-
-```
-lib/agents/
-├── shared/                  ← contract, composer, verdict mapping
-├── stock/
-│   ├── fundamental/         ← PE/PB/ROE/ROCE/debt/margins
-│   ├── moat/                ← brand, pricing power, switching cost
-│   ├── technical/           ← momentum, entry zone, stop loss
-│   ├── growth/              ← revenue/earnings CAGR, bull/bear/base
-│   ├── risk/                ← volatility, max drawdown, leverage
-│   └── sentiment/           ← news tone, market bias
-├── mf/
-│   ├── manager-quality/     ← tenure, alpha vs benchmark, fund-house
-│   ├── expense-drag/        ← TER vs category, hidden costs
-│   ├── style-drift/         ← stated vs actual style, churn
-│   ├── risk-adjusted/       ← Sharpe, Sortino, downside capture
-│   ├── consistency/         ← rolling-return distribution, top-quartile %
-│   └── tax-efficiency/      ← turnover, capital gains drag, ELSS lock-in
-├── insurance/               ← v2: coverage adequacy, ULIP cost-of-insurance, etc.
-└── retirement/              ← v2: real return after tax+inflation
-```
-
-Each agent implements the shared contract:
-
-```ts
-interface Agent<TInput, TSignals> {
-  name: string;
-  weight: number;
-  run(input: TInput): Promise<AgentResult<TSignals>>;
-}
-```
-
-Composer collects results, applies weights, computes composite (0–10), maps to verdict, and persists to `ScanRun + AgentScore` tables.
+</div>
 
 ---
 
-## Quick start (local)
+## Live Demo
+
+> **[https://stock-mind-p93x.vercel.app/](https://stock-mind-p93x.vercel.app/)**
+>
+> Sign up with any email → browse the screener → search any NSE stock (try `RELIANCE`, `TCS`, `INFY`) → click **Deep Scan** to run the AI.
+
+---
+
+## What is this?
+
+StockMind Terminal is a full-stack web app that brings institutional-grade stock research to retail investors. It combines live NSE/BSE market data with a 6-agent AI engine that scores every stock across fundamentals, technicals, moat, growth, sentiment, and risk — then spits out a clear verdict: **Strong Buy → Avoid**.
+
+No spreadsheets. No juggling 10 browser tabs. Just open the terminal and decide.
+
+---
+
+## Features at a Glance
+
+| | Feature | What it does |
+|---|---|---|
+| 🔍 | **NSE Screener** | Filter 500+ stocks by index (Nifty 50 / Midcap / Smallcap), PE, market cap, preset strategy |
+| 🤖 | **6-Agent AI Analysis** | Every stock scored 0–10 across 6 dimensions → composite verdict with entry zone |
+| 📊 | **Portfolio Manager** | Track stocks + mutual funds, see live P&L, unrealised gains |
+| 🏦 | **Broker Sync** | Auto-import holdings from **Angel One** (SmartAPI) or **Zerodha** (CSV) |
+| ⚖️ | **Smart Rebalancing** | AI detects overweight sectors and recommends rebalance moves |
+| 🔔 | **Alerts & Watchlist** | Price alerts, signal-flip alerts, daily/weekly email digest |
+| 📈 | **Interactive Charts** | TradingView-quality price charts — 1M to 5Y, Angel One + Yahoo fallback |
+| 💰 | **Mutual Funds** | Track SIP/lump-sum holdings with live NAV, 1Y/3Y/5Y trailing returns |
+
+---
+
+## The AI Engine
+
+6 specialised agents run **in parallel** on every stock:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     6-AGENT ANALYSIS ENGINE                     │
+├──────────────┬──────────────┬──────────────┬────────────────────┤
+│ Fundamental  │     Moat     │  Technical   │      Growth        │
+│    30%  ██████│    25%  █████│    20%  ████ │      10%  ██       │
+│              │              │              │                    │
+│ PE, PB, ROE  │ Brand, moat, │ Momentum,   │ Revenue CAGR,      │
+│ debt, margins│ pricing power│ entry zone  │ bear/base/bull     │
+├──────────────┴──────────────┴──────────────┴────────────────────┤
+│         Risk  10%  ██         Sentiment  5%  █                  │
+│         Volatility, drawdown  News tone, market bias            │
+└─────────────────────────────────────────────────────────────────┘
+         ↓
+  Composite = F×30% + M×25% + T×20% + G×10% + R×10% + S×5%
+         ↓
+  ≥7.5 → Strong Buy  |  6–7.4 → Buy  |  4.5–6 → Hold
+  3–4.5 → Caution    |  <3    → Avoid
+```
+
+---
+
+## Quick Start (Local)
+
+**Prerequisites:** Node.js 18+, npm 9+
 
 ```bash
-git clone <your-fork> artha
-cd artha
+# 1. Clone
+git clone https://github.com/Rishi298/StockMind.git
+cd StockMind
+
+# 2. Install dependencies
 npm install
+
+# 3. Set up environment variables
 cp .env.local.example .env.local
-# fill in DATABASE_URL (Neon free tier) + Clerk keys
+# → Fill in CLERK keys, DATABASE_URL (see Environment Variables section)
+
+# 4. Generate Prisma client + run dev server
 npx prisma generate
-npx prisma db push
 npm run dev
 ```
 
-Open <http://localhost:3000>. Sign in via Clerk → `/dashboard`.
+Open [http://localhost:3000](http://localhost:3000) — the screener loads immediately.
 
----
+**Quick test:** Visit `/stock/RELIANCE` — you should see live data + AI verdict.
+
 
 ## Deploy to Vercel
 
 ```bash
+# One-command deploy
 npx vercel --prod
 ```
 
-Add the env vars from `.env.local.example` in Vercel project settings. Add a Neon Postgres database (free tier) and paste its connection URL into `DATABASE_URL`.
+Or connect your GitHub repo in the [Vercel dashboard](https://vercel.com/new) — it auto-detects Next.js.
+
+**Required Vercel environment variables** (add in Project → Settings → Environment Variables):
+
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_SECRET_KEY
+DATABASE_URL
+NEXT_PUBLIC_CLERK_SIGN_IN_URL=/sign-in
+NEXT_PUBLIC_CLERK_SIGN_UP_URL=/sign-up
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL=/
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL=/
+```
+
+Then trigger a redeploy — the app goes live in ~90 seconds.
 
 ---
 
-## Project structure
+## Tech Stack
+
+```
+Frontend          Next.js 15 (App Router + RSC) · React 18 · TailwindCSS 3
+Charts            TradingView Lightweight Charts · Recharts
+Data Fetching     SWR (stale-while-revalidate)
+Auth              Clerk v7 (hosted sign-in/up, edge middleware)
+Database          Neon PostgreSQL (serverless) · Prisma ORM v7
+Market Data       yahoo-finance2 (free) · Angel One SmartAPI · MFAPI.in
+Email             Nodemailer + Gmail SMTP
+Deployment        Vercel (serverless functions + edge)
+Language          TypeScript 5 (strict mode end-to-end)
+```
+
+---
+
+## Project Structure
 
 ```
 app/
-  (root)/                    ← landing, auth pages
-  dashboard/                 ← net worth + allocation
-  stocks/                    ← screener + [ticker] detail
-  mutual-funds/              ← screener + [code] detail
-  portfolio/                 ← all holdings, edit
-  insurance/                 ← (v2) policy tracker
-  retirement/                ← (v2) EPF/PPF/NPS/FD
-  api/                       ← REST endpoints
-components/
-  ui/                        ← Button, Card, Table primitives
-  layout/                    ← Nav, Sidebar, Shell
-  stock/, mf/, portfolio/, scan/, dashboard/
+├── page.tsx                  ← Home screener
+├── stock/[ticker]/           ← Stock deep-dive page
+├── portfolio/                ← Portfolio & MF tracking
+├── watchlist/                ← Watchlist management
+├── alerts/                   ← Price & signal alerts
+├── rebalance/                ← Rebalancing engine
+└── api/                      ← 23 REST endpoints
+
 lib/
-  db.ts                      ← Prisma client
-  cache.ts                   ← in-memory + DB cache helpers
-  data/
-    yahoo.ts                 ← live stock data
-    mfapi.ts                 ← live MF NAV + history
-    universe.ts              ← seeded NSE universe
-  agents/                    ← see structure above
-  utils/
-    money.ts, format.ts, tax.ts, xirr.ts
+├── yahoo.ts                  ← Yahoo Finance wrapper + 60s cache
+├── angelone.ts               ← Angel One SmartAPI client
+├── zerodha.ts                ← Zerodha Kite client
+├── mfapi.ts                  ← Mutual fund NAV + returns
+├── universe.ts               ← NSE stock universe (500+)
+└── agents/
+    ├── fundamental.ts        ← PE, ROE, debt, margins
+    ├── technical.ts          ← Momentum, entry zone, stop-loss
+    ├── sentiment.ts          ← News tone, market bias
+    ├── moat.ts               ← Brand, pricing power, switching cost
+    ├── growth.ts             ← Revenue CAGR, bear/base/bull CAGR
+    └── risk.ts               ← Volatility, drawdown, leverage
+
 prisma/
-  schema.prisma              ← 16 models, ready for all 4 asset classes
-scripts/
-  seed.ts                    ← seed NSE universe + sample MF schemes
+└── schema.prisma             ← 7 models: Holdings, MF, Alerts, Watchlist, Cache...
 ```
 
 ---
 
-## Adding a new agent
+## Database Schema (7 models)
 
-1. Create `lib/agents/<asset-class>/<agent-name>/agent.ts` exporting an object that satisfies `Agent<...>`.
-2. Create `lib/agents/<asset-class>/<agent-name>/signals.ts` for any pure helpers.
-3. Register it in `lib/agents/<asset-class>/index.ts`.
-4. The composer auto-includes it on next scan run.
-
-That's the whole contract. Each agent owns its own folder, its own tests, its own rationale templates.
+| Model | Purpose |
+|---|---|
+| `StockHolding` | User's stock positions (qty, avg cost, buy date, broker) |
+| `MFHolding` | Mutual fund holdings (units, invested NAV, amount) |
+| `MFNavCache` | Global NAV history cache (avoids repeated API calls) |
+| `Alert` | Price & signal alerts per user |
+| `Watchlist` | User's tracked symbols |
+| `RebalanceHistory` | Saved rebalancing recommendations |
+| `FundamentalsCache` | PE, PB, ROE, EPS cached globally |
+| `Settings` | Key-value store for broker tokens and config |
 
 ---
 
-## Legal notice
+## Running Costs
 
-Artha is for personal research and educational use. Under SEBI (Investment Advisers) Regulations 2013, providing paid investment advice requires SEBI RA registration. AI-generated scores are **not** financial advice — always do your own due diligence.
+| Service | Tier | Cost |
+|---|---|---|
+| Vercel | Hobby | **Free** (100 GB BW, 100 deploys/day) |
+| Neon PostgreSQL | Free | **Free** (0.5 GB storage, serverless) |
+| Clerk | Free | **Free** (10,000 MAU) |
+| yahoo-finance2 | — | **Free** (unofficial, no key needed) |
+| MFAPI.in | — | **Free** |
+
+**Total running cost at zero scale: ₹0/month.**
+
+---
+
+## Legal Notice
+
+> This app is built for **personal research and educational use only**.
+>
+> Under SEBI (Investment Advisers) Regulations 2013, providing investment advice for a fee requires SEBI RA registration. AI-generated scores are not financial advice — always do your own due diligence before investing.
 
 ---
 
 ## License
 
-MIT.
+MIT — free to use for personal and educational purposes.
+
+---
+
+<div align="center">
+
+Built with Next.js 15 · Clerk · Neon · Prisma · Deployed on Vercel
+
+*Data: Yahoo Finance (unofficial) · Not affiliated with NSE, BSE, SEBI, or any broker.*
+
+</div>
