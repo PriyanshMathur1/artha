@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getSymbolToToken } from '@/lib/scripmaster';
 import { getValidToken } from '@/lib/angelone-session';
+import { getQuote as yahooQuote } from '@/lib/yahoo';
 import {
   NIFTY_50, NIFTY_NEXT_50, NIFTY_MIDCAP_150, NIFTY_SMALLCAP_250,
   STOCK_UNIVERSE, type StockInfo,
@@ -142,6 +143,29 @@ function noDataRow(stock: StockInfo): ScreenerRow {
   };
 }
 
+function toYahooRow(stock: StockInfo, q: Awaited<ReturnType<typeof yahooQuote>>): ScreenerRow {
+  const price = q.regularMarketPrice > 0 ? q.regularMarketPrice : q.regularMarketPreviousClose;
+  return {
+    ticker: stock.ticker,
+    name: stock.name,
+    sector: stock.sector,
+    price,
+    change: q.regularMarketChange,
+    changePct: q.regularMarketChangePercent,
+    marketCap: q.marketCap ?? 0,
+    pe: q.trailingPE ?? null,
+    pb: q.priceToBook ?? null,
+    dividendYield: q.dividendYield ?? null,
+    fiftyTwoWeekHigh: q.fiftyTwoWeekHigh ?? 0,
+    fiftyTwoWeekLow: q.fiftyTwoWeekLow ?? 0,
+    dma50: q.fiftyDayAverage ?? 0,
+    dma200: q.twoHundredDayAverage ?? 0,
+    volume: q.regularMarketVolume ?? 0,
+    avgVolume: q.averageVolume10days || q.averageVolume || 0,
+    signal: computeSignal(price, q.fiftyTwoWeekLow ?? 0, q.fiftyTwoWeekHigh ?? 0, q.regularMarketChangePercent ?? 0),
+  };
+}
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const preset = searchParams.get('preset');
@@ -234,18 +258,30 @@ export async function GET(req: NextRequest) {
     fundamentalsMap = new Map();
   }
 
-  const rows: ScreenerRow[] = stocks.map((s) => {
+  const rows = await Promise.all(stocks.map(async (s) => {
     const q = quotes.get(s.ticker);
     const fund = fundamentalsMap.get(s.ticker);
-    const base = q && (q.ltp > 0 || q.close > 0) ? toRow(s, q) : noDataRow(s);
+    let base: ScreenerRow;
+
+    if (q && (q.ltp > 0 || q.close > 0)) {
+      base = toRow(s, q);
+    } else {
+      try {
+        const yq = await yahooQuote(s.ticker);
+        base = toYahooRow(s, yq);
+      } catch {
+        base = noDataRow(s);
+      }
+    }
+
     if (fund) {
-      base.pe           = fund.pe ?? base.pe;
-      base.pb           = fund.pb ?? base.pb;
-      base.marketCap    = fund.marketCap ?? base.marketCap;
+      base.pe = fund.pe ?? base.pe;
+      base.pb = fund.pb ?? base.pb;
+      base.marketCap = fund.marketCap ?? base.marketCap;
       base.dividendYield = fund.dividendYield ?? base.dividendYield;
     }
     return base;
-  });
+  }));
 
   return NextResponse.json(
     { rows, count: rows.length, preset: preset ?? index ?? null },
